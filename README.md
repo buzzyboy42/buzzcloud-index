@@ -1,5 +1,7 @@
 # BuzzCloud Index
 
+**BuzzCloud Web Browser**
+
 Part of the BuzzCloud ecosystem. A desktop web browser built on Chromium (via Electron). Chromium renders the pages and does the networking. Everything else is this project's own code: the tab strip, toolbar, ad blocker wiring, private windows, bookmarks, history and the internal pages.
 
 ## Run it
