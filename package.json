@@ -9,12 +9,16 @@
     "dist:linux": "electron-builder --linux",
     "dist:win": "electron-builder --win",
     "dist:mac": "electron-builder --mac",
-    "icon": "electron build/render-icon.js"
+    "icon": "electron build/render-icon.js",
+    "release": "electron-builder --publish always"
   },
-  "author": "",
+  "author": {
+    "name": "BuzzCloud"
+  },
   "license": "MIT",
   "dependencies": {
-    "@ghostery/adblocker-electron": "^2.20.1"
+    "@ghostery/adblocker-electron": "^2.20.1",
+    "electron-updater": "^6.8.9"
   },
   "devDependencies": {
     "electron": "^44.7.2",
@@ -45,8 +49,18 @@
     ],
     "linux": {
       "target": [
-        "AppImage",
-        "deb"
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
       ],
       "category": "Network;WebBrowser",
       "mimeTypes": [
@@ -54,18 +68,64 @@
         "x-scheme-handler/https",
         "text/html"
       ],
-      "executableName": "buzzcloud-index"
+      "executableName": "buzzcloud-index",
+      "icon": "build/icon.png",
+      "maintainer": "BuzzCloud",
+      "syncDesktopName": true
     },
     "win": {
-      "target": "nsis"
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png"
     },
     "mac": {
-      "target": "dmg",
-      "category": "public.app-category.productivity"
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "category": "public.app-category.productivity",
+      "icon": "build/icon.png"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "buzzyboy42",
+        "repo": "buzzcloud-index",
+        "releaseType": "draft"
+      }
+    ],
+    "artifactName": "BuzzCloud-Index-${version}-${os}-${arch}.${ext}",
+    "nsis": {
+      "artifactName": "BuzzCloud-Index-Setup-${version}.${ext}",
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "BuzzCloud Index"
     }
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/buzzyboy42/buzzcloud-index.git"
-  }
+  },
+  "desktopName": "buzzcloud-index.desktop"
 }

@@ -71,6 +71,10 @@ function renderToolbar() {
     ? `Blocked ${a.blocked || 0} ads & trackers on this page. Click to turn blocking off.`
     : 'Ad & tracker blocking is off. Click to turn it on.';
 
+  const update = $('update');
+  update.hidden = !state.updateReady;
+  update.title = state.updateReady ? `Version ${state.updateReady} is ready. Restart to install it.` : '';
+
   const switched = state.activeId !== lastActiveId;
   lastActiveId = state.activeId;
   if (!editing || switched) {
@@ -123,6 +127,7 @@ $('home').addEventListener('click', () => browser.send('nav:home'));
 $('bookmark').addEventListener('click', () => browser.send('bookmark:toggle'));
 $('shield').addEventListener('click', () => browser.send('adblock:toggle'));
 $('menu').addEventListener('click', () => browser.send('menu:open'));
+$('update').addEventListener('click', () => browser.send('update:install'));
 window.addEventListener('resize', () => state && renderTabs());
 
 browser.send('ui:ready');

@@ -11,13 +11,35 @@ npm install
 npm start
 ```
 
-## Build installers
+## Download and install
+
+Get the latest version from the [Releases page](https://github.com/buzzyboy42/buzzcloud-index/releases/latest):
+
+| System | File |
+|---|---|
+| Windows | `BuzzCloud-Index-Setup-x.y.z.exe`: run it to install |
+| macOS | `.dmg`: `arm64` for Apple Silicon, `x64` for Intel |
+| Linux | `.AppImage` (make it executable and run it) or `.deb` |
+
+The installers aren't code-signed yet, so on first launch Windows SmartScreen shows **More info → Run anyway**, and macOS needs **right-click → Open**.
+
+## Automatic updates
+
+Installed copies check GitHub Releases at startup and every 4 hours, then download new versions in the background. When an update is ready, the toolbar shows **Restart to update**. If you ignore it, the update installs the next time the browser quits. You can also check by hand under **Settings → Check for Updates…**.
+
+- **Windows and Linux AppImage:** fully automatic.
+- **macOS:** Apple only allows auto-update for signed apps. Until the app is signed with an Apple Developer ID, "Check for Updates…" opens the Releases page instead.
+
+## Publishing a new version
 
 ```bash
-npm run dist:linux   # AppImage + .deb  → dist/
-npm run dist:win     # NSIS installer (run on Windows)
-npm run dist:mac     # .dmg (run on macOS)
+npm version patch        # or minor / major: bumps package.json and creates a vX.Y.Z tag
+git push --follow-tags
 ```
+
+Pushing the tag starts the **Release** GitHub Action (`.github/workflows/release.yml`). It builds the Windows, macOS and Linux installers on GitHub's servers, uploads them to a draft release, and publishes the release once all three platforms have built. Installed browsers then pick up the update.
+
+To build installers locally instead: `npm run dist:linux`, `npm run dist:win` or `npm run dist:mac`. Each runs on its own operating system and writes to `dist/`.
 
 ## Features
 
@@ -57,6 +79,7 @@ npm run dist:mac     # .dmg (run on macOS)
 brand.json               name, colors, search engines
 src/main.js              main process: windows, tabs, menus/shortcuts, permissions, IPC
 src/adblock.js           Ghostery engine wired into each browsing session
+src/updater.js           auto-update from GitHub Releases
 src/store.js             JSON storage for bookmarks, history and settings (in the user-data dir)
 src/preload-ui.js        narrow bridge for the toolbar UI
 src/preload-internal.js  bridge for buzzcloud:// pages only; the main process re-checks the sender
@@ -71,4 +94,5 @@ Each window is a `BrowserWindow` whose own web contents is the toolbar. Each tab
 - **No DRM video (Netflix, Disney+, …).** Stock Electron ships without Widevine. Use [castLabs' Electron for Content Security](https://github.com/castlabs/electron-releases) to add it.
 - **No Chrome Web Store extensions.** Electron supports only part of the extension API.
 - **Some Google sign-ins may refuse "embedded" browsers.** Most other sites behave like Chrome.
-- **No auto-update or sync yet.** For auto-update, add `electron-updater` and a release feed.
+- **No sync yet.**
+- **Unsigned installers.** Code-signing certificates remove the Windows SmartScreen and macOS warnings, and enable Mac auto-update.

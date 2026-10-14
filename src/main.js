@@ -18,6 +18,7 @@ const { Readable } = require('stream');
 const brand = require('../brand.json');
 const { createStores } = require('./store');
 const { AdBlock } = require('./adblock');
+const updater = require('./updater');
 
 app.setName(brand.name);
 protocol.registerSchemesAsPrivileged([
@@ -474,6 +475,7 @@ class Win {
       brand: { name: brand.name },
       private: this.isPrivate,
       adblock: store.getSettings().adblock,
+      updateReady: updater.state.status === 'ready' ? updater.state.version : null,
       activeId: this.activeId,
       tabs: this.tabs.map((t) => ({
         id: t.id,
@@ -560,6 +562,7 @@ function settingsMenu() {
         },
       })),
     },
+    { label: 'Check for Updates…', click: () => updater.checkNow() },
     {
       label: `Make ${brand.name} the Default Browser`,
       click: () => {
@@ -715,6 +718,7 @@ onUi('nav:focus-page', (win) => win.active?.wc.focus());
 onUi('bookmark:toggle', (win) => toggleBookmark(win));
 onUi('adblock:toggle', () => setAdblock(!store.getSettings().adblock));
 onUi('menu:open', (win) => popupMainMenu(win));
+onUi('update:install', () => updater.install());
 
 // ---------------------------------------------------------------------------
 // IPC: internal pages (newtab, bookmarks, history) — only from our scheme
@@ -791,6 +795,7 @@ if (!app.requestSingleInstanceLock()) {
     });
 
     buildAppMenu();
+    updater.init(() => allWins().forEach((w) => w.emit()));
     const urls = urlsFromArgs(process.argv);
     const win = new Win({ url: urls[0] });
     urls.slice(1).forEach((url) => win.newTab(url, false));
