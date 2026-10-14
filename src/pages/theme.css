@@ -1,60 +1,80 @@
 /* BuzzCloud brand tokens, shared by the browser toolbar (src/ui) and the
-   internal pages. Edit colors here. Palette sampled from buzzcloud.win. */
+   internal pages. Values follow buzzcloud.win's stylesheet: monochrome ink on
+   white, Cormorant Garamond + Inter, and "liquid glass" pill buttons. */
 @import url(fonts/fonts.css);
 
 :root {
-  --font-display: "Cormorant Garamond", "Cormorant", Georgia, serif;
+  --font-display: "Cormorant Garamond", Georgia, serif;
   --font-ui: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --tracking: 0.14em;          /* spaced-out uppercase labels */
+  --tracking: 0.2em;           /* .section-label */
+  --tracking-ui: 0.06em;       /* nav links and buttons */
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
 
-  /* Cloud (light) */
-  --frame: #dddad5;            /* tab strip */
-  --surface: #efede9;          /* toolbar, active tab, page background */
-  --card: #f8f7f5;
-  --field: #f8f7f5;
-  --line: #d1cdc6;
-  --text: #24262d;
-  --muted: #6c6f79;
-  --hover: rgba(36, 38, 45, 0.07);
-  --accent: #546176;           /* storm slate */
-  --accent-soft: rgba(84, 97, 118, 0.16);
-  --pill: #24262d;             /* solid pill button */
-  --pill-text: #f7f7f7;
-  --warn: #b0703a;
+  /* Light: like the site's scrolled nav and white sections */
+  --frame: #f2f2f2;            /* tab strip */
+  --surface: #ffffff;          /* toolbar, active tab, page background */
+  --card: #ffffff;
+  --card-hover: #fafafa;
+  --field: #f7f7f7;            /* --off */
+  --line: #e8e8e8;             /* --line */
+  --text: #1a1a1a;             /* --ink */
+  --body: #5a5a5a;             /* .section-p */
+  --muted: #6a6a6a;
+  --hover: rgba(0, 0, 0, 0.05);
+  --accent: #1a1a1a;
+  --accent-soft: rgba(0, 0, 0, 0.07);
+  --warn: #a8641f;
+  /* Solid pill: the scrolled-nav "Sign in" button (dark glass) */
+  --pill-bg:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0) 45%, rgba(255, 255, 255, 0) 65%, rgba(255, 255, 255, 0.08) 100%),
+    rgba(20, 20, 20, 0.72);
+  --pill-text: #ffffff;
+  --pill-border: rgba(255, 255, 255, 0.12);
 }
 
 @media (prefers-color-scheme: dark) {
-  /* Storm (dark) */
+  /* Dark: like the site's hero and footer */
   :root {
-    --frame: #2a2c33;
-    --surface: #353841;
-    --card: #3c3f49;
-    --field: rgba(255, 255, 255, 0.07);
-    --line: rgba(255, 255, 255, 0.13);
-    --text: #eeece8;
-    --muted: #a3a6af;
-    --hover: rgba(255, 255, 255, 0.08);
-    --accent: #c4d1e4;         /* pale sky */
-    --accent-soft: rgba(196, 209, 228, 0.18);
-    --pill: #f7f7f7;
-    --pill-text: #24262d;
+    --frame: #0f0f0f;          /* footer */
+    --surface: #161616;
+    --card: #1c1c1c;
+    --card-hover: #222222;
+    --field: rgba(255, 255, 255, 0.06);
+    --line: rgba(255, 255, 255, 0.1);
+    --text: #ffffff;
+    --body: rgba(255, 255, 255, 0.6);
+    --muted: rgba(255, 255, 255, 0.5);
+    --hover: rgba(255, 255, 255, 0.07);
+    --accent: #ffffff;
+    --accent-soft: rgba(255, 255, 255, 0.12);
     --warn: #e0a46c;
+    /* White liquid glass, like "Get started" */
+    --pill-bg:
+      linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.55) 45%, rgba(255, 255, 255, 0.55) 60%, rgba(255, 255, 255, 0.85) 100%),
+      rgba(255, 255, 255, 0.7);
+    --pill-text: #1a1a1a;
+    --pill-border: rgba(255, 255, 255, 0.6);
   }
 }
 
-/* Night (private windows) */
+/* Private windows: always the darkest variant */
 .private {
-  --frame: #1b1d24;
-  --surface: #252831;
-  --card: #2c2f39;
-  --field: rgba(255, 255, 255, 0.06);
-  --line: rgba(255, 255, 255, 0.11);
-  --text: #e9e8ee;
-  --muted: #9599a6;
+  --frame: #0a0a0a;
+  --surface: #121212;
+  --card: #181818;
+  --card-hover: #1e1e1e;
+  --field: rgba(255, 255, 255, 0.05);
+  --line: rgba(255, 255, 255, 0.09);
+  --text: #ffffff;
+  --body: rgba(255, 255, 255, 0.6);
+  --muted: rgba(255, 255, 255, 0.5);
   --hover: rgba(255, 255, 255, 0.07);
-  --accent: #a9bcd8;
-  --accent-soft: rgba(169, 188, 216, 0.18);
-  --pill: #f7f7f7;
-  --pill-text: #1b1d24;
+  --accent: #ffffff;
+  --accent-soft: rgba(255, 255, 255, 0.12);
   --warn: #e0a46c;
+  --pill-bg:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.55) 45%, rgba(255, 255, 255, 0.55) 60%, rgba(255, 255, 255, 0.85) 100%),
+    rgba(255, 255, 255, 0.7);
+  --pill-text: #1a1a1a;
+  --pill-border: rgba(255, 255, 255, 0.6);
 }

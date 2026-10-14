@@ -372,7 +372,7 @@ class Win {
       title: isPrivate ? `${brand.name} (Private)` : brand.name,
       icon: ICON,
       autoHideMenuBar: true,
-      backgroundColor: isPrivate ? '#1b1d24' : nativeTheme.shouldUseDarkColors ? '#2a2c33' : '#dddad5',
+      backgroundColor: isPrivate ? '#0a0a0a' : nativeTheme.shouldUseDarkColors ? '#0f0f0f' : '#f2f2f2',
       webPreferences: {
         session: this.session,
         preload: path.join(__dirname, 'preload-ui.js'),

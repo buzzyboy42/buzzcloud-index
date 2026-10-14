@@ -19,9 +19,21 @@ Get the latest version from the [Releases page](https://github.com/buzzyboy42/bu
 |---|---|
 | Windows | `BuzzCloud-Index-Setup-x.y.z.exe`: run it to install |
 | macOS | `.dmg`: `arm64` for Apple Silicon, `x64` for Intel |
-| Linux | `.AppImage` (make it executable and run it) or `.deb` |
+| Linux | `.AppImage` (make it executable and run it) or `.deb`. Use `amd64`/`x86_64` files for Intel/AMD and `arm64` files for ARM |
+| ChromeOS | See below |
 
 The installers aren't code-signed yet, so on first launch Windows SmartScreen shows **More info → Run anyway**, and macOS needs **right-click → Open**.
+
+### ChromeOS
+
+BuzzCloud Index runs on Chromebooks through ChromeOS's built-in Linux support:
+
+1. Open **Settings → About ChromeOS → Developers → Linux development environment → Turn on**. This takes a few minutes the first time. On school or work Chromebooks, an administrator may have turned this option off.
+2. Find out which chip the Chromebook has: in the Linux **Terminal** app, run `dpkg --print-architecture`. It prints `amd64` (Intel/AMD) or `arm64` (ARM, e.g. MediaTek or Snapdragon).
+3. Download the matching `.deb` from the Releases page, for example `BuzzCloud-Index-x.y.z-linux-amd64.deb`.
+4. In the **Files** app, double-click the `.deb` and choose **Install**.
+
+BuzzCloud Index then appears in the app launcher. ChromeOS can't make it the system's default browser, so links from other apps still open in Chrome.
 
 ## Automatic updates
 
@@ -48,7 +60,7 @@ To build installers locally instead: `npm run dist:linux`, `npm run dist:win` or
 - **Privacy defaults.** Every request sends `Sec-GPC: 1` and `DNT: 1`. Camera, microphone, location, notifications and screen sharing are blocked unless you allow them in a prompt, and that answer lasts until the browser restarts. The user agent is plain Chrome, so the browser can't be fingerprinted as Electron.
 - **Private windows.** Each one gets its own in-memory session. Nothing is saved to history, and cookies and storage are deleted when the window closes.
 - **Bookmarks and history.** Star a page or press Ctrl+D. Bookmarks show as tiles on the new tab page. There are searchable `buzzcloud://bookmarks` and `buzzcloud://history` pages.
-- **BuzzCloud look.** Follows buzzcloud.win: a Cormorant Garamond serif wordmark, Inter for the interface, spaced-out uppercase labels, and pill-shaped glass controls. The colors come from a storm-slate and cloud palette, with a light "cloud" theme, a dark "storm" theme and a "night" theme for private windows. The new tab page sits on a full-screen cloud sky.
+- **BuzzCloud look.** Follows buzzcloud.win's stylesheet: light Cormorant Garamond headings, Inter text, spaced-out uppercase labels, monochrome ink-on-white (or white-on-black in dark mode), and liquid-glass pill buttons. The new tab page is the site's hero: the flying-through-clouds video under the same dark gradient, with the same slow zoom and fade-in.
 
 ## Keyboard shortcuts
 
@@ -70,7 +82,7 @@ To build installers locally instead: `npm run dist:linux`, `npm run dist:win` or
 
 - **Name, search engines and homepage:** `brand.json`. A two-word name like "BuzzCloud Index" shows as the serif wordmark "BuzzCloud" with "INDEX" underneath.
 - **Colors and fonts:** `src/pages/theme.css`. Both the toolbar and the internal pages use it. The fonts are bundled in `src/pages/fonts` (SIL Open Font License), so nothing loads from the internet.
-- **New tab background:** put a video at `src/pages/sky.mp4` (H.264) or `src/pages/sky.webm`, and the new tab page plays it muted on a loop. Without one, or when the system asks for reduced motion, it shows the still `src/pages/sky.jpg`.
+- **New tab background:** `src/pages/sky.mp4` (H.264, no audio) plays muted on a loop. `src/pages/sky.jpg` is its first frame, shown until the video starts and whenever the system asks for reduced motion. To swap the video, replace both files. The clip is "Flying through Clouds time lapse loop 2" by CGI Guy (free stock footage).
 - **App icon:** edit `build/icon.html`, then run `npm run icon` to regenerate `build/icon.png`.
 
 ## How it's put together

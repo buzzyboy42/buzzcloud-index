@@ -1,6 +1,6 @@
 {
   "name": "buzzcloud-index",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "BuzzCloud Index: a fast, private web browser built on Chromium",
   "main": "src/main.js",
   "scripts": {
@@ -52,13 +52,15 @@
         {
           "target": "AppImage",
           "arch": [
-            "x64"
+            "x64",
+            "arm64"
           ]
         },
         {
           "target": "deb",
           "arch": [
-            "x64"
+            "x64",
+            "arm64"
           ]
         }
       ],
