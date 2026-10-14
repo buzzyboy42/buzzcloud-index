@@ -32,12 +32,12 @@ Installed copies check GitHub Releases at startup and every 4 hours, then downlo
 
 ## Publishing a new version
 
-```bash
-npm version patch        # or minor / major: bumps package.json and creates a vX.Y.Z tag
-git push --follow-tags
-```
+1. Bump `version` in `package.json` (e.g. `0.1.0` → `0.1.1`) and push to `main`.
+2. On GitHub, go to **Actions → Release → Run workflow**.
 
-Pushing the tag starts the **Release** GitHub Action (`.github/workflows/release.yml`). It builds the Windows, macOS and Linux installers on GitHub's servers, uploads them to a draft release, and publishes the release once all three platforms have built. Installed browsers then pick up the update.
+Alternatively, run `npm version patch && git push --follow-tags` from your computer.
+
+Either way, this starts the **Release** GitHub Action (`.github/workflows/release.yml`). It builds the Windows, macOS and Linux installers on GitHub's servers, uploads them to a draft release, and publishes the release once all three platforms have built. Installed browsers then pick up the update.
 
 To build installers locally instead: `npm run dist:linux`, `npm run dist:win` or `npm run dist:mac`. Each runs on its own operating system and writes to `dist/`.
 

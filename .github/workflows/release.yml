@@ -1,14 +1,22 @@
 name: Release
 
-# Push a version tag (npm version patch && git push --follow-tags) to build
-# installers for Windows, macOS and Linux and publish them as a GitHub Release.
-# Installed copies of the browser update themselves from these releases.
+# Builds installers for Windows, macOS and Linux and publishes them as a GitHub
+# Release. Installed copies of the browser update themselves from these releases.
+#
+# Two ways to release the version in package.json:
+#   - Actions tab → Release → Run workflow (creates the vX.Y.Z tag for you), or
+#   - npm version patch && git push --follow-tags
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
 
 permissions:
   contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
   # Create a draft release once, so the three build jobs upload into the same one.
@@ -16,15 +24,35 @@ jobs:
   # see a half-uploaded update.
   create-release:
     runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
-      - name: Create release
+
+      - name: Work out the tag
+        id: tag
+        shell: bash
+        run: |
+          version=$(node -p "require('./package.json').version")
+          if [ "$GITHUB_REF_TYPE" = "tag" ] && [ "$GITHUB_REF_NAME" != "v$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $version"
+            exit 1
+          fi
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+
+      - name: Create draft release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        shell: bash
         run: |
-          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || \
-            gh release create "$GITHUB_REF_NAME" --draft --verify-tag \
-              --title "BuzzCloud Index ${GITHUB_REF_NAME#v}" --generate-notes
+          if gh release view "$TAG" --json isDraft --jq .isDraft 2>/dev/null | grep -q false; then
+            echo "::error::Release $TAG is already published. Bump the version (npm version patch) first."
+            exit 1
+          fi
+          gh release view "$TAG" >/dev/null 2>&1 || \
+            gh release create "$TAG" --draft --target "$GITHUB_SHA" \
+              --title "BuzzCloud Index ${TAG#v}" --generate-notes
 
   build:
     needs: create-release
@@ -47,19 +75,9 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Check tag matches package.json version
-        if: startsWith(github.ref, 'refs/tags/')
-        shell: bash
-        run: |
-          version=$(node -p "require('./package.json').version")
-          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
-            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $version"
-            exit 1
-          fi
-
       - run: npm ci
 
-      - name: Build and publish
+      - name: Build and upload to the draft release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # No Apple/Windows signing certificates yet; build unsigned.
@@ -67,10 +85,11 @@ jobs:
         run: npx electron-builder ${{ matrix.target }} --publish always
 
   publish:
-    needs: build
+    needs: [create-release, build]
     runs-on: ubuntu-latest
     steps:
       - name: Publish release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release edit "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft=false --latest
+          TAG: ${{ needs.create-release.outputs.tag }}
+        run: gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --latest
