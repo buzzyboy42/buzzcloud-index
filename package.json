@@ -1,7 +1,7 @@
 {
-  "name": "aurora-browser",
+  "name": "buzzcloud-index",
   "version": "0.1.0",
-  "description": "A fast, private web browser built on Chromium",
+  "description": "BuzzCloud Index: a fast, private web browser built on Chromium",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
@@ -19,10 +19,10 @@
     "electron": "^44.7.2",
     "electron-builder": "^26.15.3"
   },
-  "productName": "Aurora",
+  "productName": "BuzzCloud Index",
   "build": {
-    "appId": "com.example.aurora",
-    "productName": "Aurora",
+    "appId": "com.buzzcloud.index",
+    "productName": "BuzzCloud Index",
     "files": [
       "src/**/*",
       "brand.json",
@@ -53,7 +53,7 @@
         "x-scheme-handler/https",
         "text/html"
       ],
-      "executableName": "aurora"
+      "executableName": "buzzcloud-index"
     },
     "win": {
       "target": "nsis"
@@ -62,5 +62,9 @@
       "target": "dmg",
       "category": "public.app-category.productivity"
     }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/buzzyboy/buzzcloud-index.git"
   }
 }

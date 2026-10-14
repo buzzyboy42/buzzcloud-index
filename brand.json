@@ -1,8 +1,8 @@
 {
-  "name": "Aurora",
-  "scheme": "aurora",
+  "name": "BuzzCloud Index",
+  "scheme": "buzzcloud",
   "accent": "#7c5cff",
-  "homepage": "aurora://newtab",
+  "homepage": "buzzcloud://newtab",
   "searchEngines": {
     "DuckDuckGo": "https://duckduckgo.com/?q=%s",
     "Brave": "https://search.brave.com/search?q=%s",

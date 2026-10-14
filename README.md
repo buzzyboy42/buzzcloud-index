@@ -1,6 +1,6 @@
-# Aurora
+# BuzzCloud Index
 
-A desktop web browser built on Chromium (via Electron). Chromium renders the pages and does the networking. Everything else is this project's own code: the tab strip, toolbar, ad blocker wiring, private windows, bookmarks, history and the internal pages.
+Part of the BuzzCloud ecosystem. A desktop web browser built on Chromium (via Electron). Chromium renders the pages and does the networking. Everything else is this project's own code: the tab strip, toolbar, ad blocker wiring, private windows, bookmarks, history and the internal pages.
 
 ## Run it
 
@@ -23,7 +23,7 @@ npm run dist:mac     # .dmg (run on macOS)
 - **Ad and tracker blocking.** Uses Ghostery's engine with EasyList, EasyPrivacy and related lists. It blocks network requests and hides ad elements on the page. The shield in the toolbar shows how many requests were blocked on the current page; click it to turn blocking off or on.
 - **Privacy defaults.** Every request sends `Sec-GPC: 1` and `DNT: 1`. Camera, microphone, location, notifications and screen sharing are blocked unless you allow them in a prompt, and that answer lasts until the browser restarts. The user agent is plain Chrome, so the browser can't be fingerprinted as Electron.
 - **Private windows.** Each one gets its own in-memory session. Nothing is saved to history, and cookies and storage are deleted when the window closes.
-- **Bookmarks and history.** Star a page or press Ctrl+D. Bookmarks show as tiles on the new tab page. There are searchable `aurora://bookmarks` and `aurora://history` pages.
+- **Bookmarks and history.** Star a page or press Ctrl+D. Bookmarks show as tiles on the new tab page. There are searchable `buzzcloud://bookmarks` and `buzzcloud://history` pages.
 - **Branding.** The name, accent color, search engines and homepage live in `brand.json`. The icon is `build/icon.svg` / `icon.png`.
 
 ## Keyboard shortcuts
@@ -44,7 +44,7 @@ npm run dist:mac     # .dmg (run on macOS)
 
 ## Rebranding
 
-1. Edit `brand.json`: `name`, `accent`, `scheme` (the internal URL scheme, e.g. `aurora://`), `homepage` (it must use the same scheme) and the search engines.
+1. Edit `brand.json`: `name`, `accent`, `scheme` (the internal URL scheme, e.g. `buzzcloud://`), `homepage` (it must use the same scheme) and the search engines.
 2. Replace `build/icon.svg` and export it to `build/icon.png` at 512×512.
 3. Update `name`, `productName`, `build.appId` and `build.productName` in `package.json`.
 
@@ -56,7 +56,7 @@ src/main.js              main process: windows, tabs, menus/shortcuts, permissio
 src/adblock.js           Ghostery engine wired into each browsing session
 src/store.js             JSON storage for bookmarks, history and settings (in the user-data dir)
 src/preload-ui.js        narrow bridge for the toolbar UI
-src/preload-internal.js  bridge for aurora:// pages only; the main process re-checks the sender
+src/preload-internal.js  bridge for buzzcloud:// pages only; the main process re-checks the sender
 src/ui/                  tab strip and toolbar (HTML/CSS/JS)
 src/pages/               new tab, bookmarks and history pages
 ```

@@ -2,7 +2,9 @@
   const info = await applyTheme();
   const name = info.name;
   const $logo = document.getElementById('logo');
-  $logo.append(name.slice(0, -1), el('span', { textContent: name.slice(-1) }));
+  // Accent the last word of multi-word names ("BuzzCloud Index"), else the last letter.
+  const split = name.includes(' ') ? name.lastIndexOf(' ') + 1 : name.length - 1;
+  $logo.append(name.slice(0, split), el('span', { textContent: name.slice(split) }));
   document.getElementById('tagline').textContent = info.private
     ? 'Private window'
     : 'Fast. Private. Yours.';
