@@ -1,0 +1,66 @@
+{
+  "name": "aurora-browser",
+  "version": "0.1.0",
+  "description": "A fast, private web browser built on Chromium",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder",
+    "dist:linux": "electron-builder --linux",
+    "dist:win": "electron-builder --win",
+    "dist:mac": "electron-builder --mac"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@ghostery/adblocker-electron": "^2.20.1"
+  },
+  "devDependencies": {
+    "electron": "^44.7.2",
+    "electron-builder": "^26.15.3"
+  },
+  "productName": "Aurora",
+  "build": {
+    "appId": "com.example.aurora",
+    "productName": "Aurora",
+    "files": [
+      "src/**/*",
+      "brand.json",
+      "build/icon.png",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "protocols": [
+      {
+        "name": "Web",
+        "schemes": [
+          "http",
+          "https"
+        ]
+      }
+    ],
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Network;WebBrowser",
+      "mimeTypes": [
+        "x-scheme-handler/http",
+        "x-scheme-handler/https",
+        "text/html"
+      ],
+      "executableName": "aurora"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.productivity"
+    }
+  }
+}

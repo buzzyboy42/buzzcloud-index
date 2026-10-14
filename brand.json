@@ -1,0 +1,13 @@
+{
+  "name": "Aurora",
+  "scheme": "aurora",
+  "accent": "#7c5cff",
+  "homepage": "aurora://newtab",
+  "searchEngines": {
+    "DuckDuckGo": "https://duckduckgo.com/?q=%s",
+    "Brave": "https://search.brave.com/search?q=%s",
+    "Startpage": "https://www.startpage.com/do/search?q=%s",
+    "Google": "https://www.google.com/search?q=%s"
+  },
+  "defaultSearchEngine": "DuckDuckGo"
+}
