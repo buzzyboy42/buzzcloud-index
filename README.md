@@ -26,7 +26,7 @@ npm run dist:mac     # .dmg (run on macOS)
 - **Privacy defaults.** Every request sends `Sec-GPC: 1` and `DNT: 1`. Camera, microphone, location, notifications and screen sharing are blocked unless you allow them in a prompt, and that answer lasts until the browser restarts. The user agent is plain Chrome, so the browser can't be fingerprinted as Electron.
 - **Private windows.** Each one gets its own in-memory session. Nothing is saved to history, and cookies and storage are deleted when the window closes.
 - **Bookmarks and history.** Star a page or press Ctrl+D. Bookmarks show as tiles on the new tab page. There are searchable `buzzcloud://bookmarks` and `buzzcloud://history` pages.
-- **Branding.** The name, accent color, search engines and homepage live in `brand.json`. The icon is `build/icon.svg` / `icon.png`.
+- **BuzzCloud look.** Follows buzzcloud.win: a Cormorant Garamond serif wordmark, Inter for the interface, spaced-out uppercase labels, and pill-shaped glass controls. The colors come from a storm-slate and cloud palette, with a light "cloud" theme, a dark "storm" theme and a "night" theme for private windows. The new tab page sits on a full-screen cloud sky.
 
 ## Keyboard shortcuts
 
@@ -44,11 +44,12 @@ npm run dist:mac     # .dmg (run on macOS)
 
 (On macOS, use Cmd instead of Ctrl.)
 
-## Rebranding
+## Branding
 
-1. Edit `brand.json`: `name`, `accent`, `scheme` (the internal URL scheme, e.g. `buzzcloud://`), `homepage` (it must use the same scheme) and the search engines.
-2. Replace `build/icon.svg` and export it to `build/icon.png` at 512×512.
-3. Update `name`, `productName`, `build.appId` and `build.productName` in `package.json`.
+- **Name, search engines and homepage:** `brand.json`. A two-word name like "BuzzCloud Index" shows as the serif wordmark "BuzzCloud" with "INDEX" underneath.
+- **Colors and fonts:** `src/pages/theme.css`. Both the toolbar and the internal pages use it. The fonts are bundled in `src/pages/fonts` (SIL Open Font License), so nothing loads from the internet.
+- **New tab background:** put a video at `src/pages/sky.mp4` (H.264) or `src/pages/sky.webm`, and the new tab page plays it muted on a loop. Without one, or when the system asks for reduced motion, it shows the still `src/pages/sky.jpg`.
+- **App icon:** edit `build/icon.html`, then run `npm run icon` to regenerate `build/icon.png`.
 
 ## How it's put together
 
@@ -60,7 +61,7 @@ src/store.js             JSON storage for bookmarks, history and settings (in th
 src/preload-ui.js        narrow bridge for the toolbar UI
 src/preload-internal.js  bridge for buzzcloud:// pages only; the main process re-checks the sender
 src/ui/                  tab strip and toolbar (HTML/CSS/JS)
-src/pages/               new tab, bookmarks and history pages
+src/pages/               new tab, bookmarks and history pages, theme.css, fonts, sky background
 ```
 
 Each window is a `BrowserWindow` whose own web contents is the toolbar. Each tab is a separate `WebContentsView` placed below the toolbar. Web pages run sandboxed with context isolation and have no access to Node or the browser's IPC.

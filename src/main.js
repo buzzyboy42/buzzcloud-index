@@ -14,13 +14,14 @@ const {
 const fs = require('fs');
 const path = require('path');
 const { pathToFileURL } = require('url');
+const { Readable } = require('stream');
 const brand = require('../brand.json');
 const { createStores } = require('./store');
 const { AdBlock } = require('./adblock');
 
 app.setName(brand.name);
 protocol.registerSchemesAsPrivileged([
-  { scheme: brand.scheme, privileges: { standard: true, secure: true, supportFetchAPI: true } },
+  { scheme: brand.scheme, privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } },
 ]);
 
 const UI_HEIGHT = 80; // tab strip + toolbar, must match --ui-height in ui.css
@@ -65,11 +66,45 @@ function toUrl(input) {
 // Sessions: internal pages, privacy headers, permissions, ad blocking
 // ---------------------------------------------------------------------------
 
+const MEDIA_TYPES = { '.mp4': 'video/mp4', '.webm': 'video/webm' };
+
+// Video needs byte-range responses so it can seek and loop without reloading.
+async function serveMedia(file, range) {
+  let size;
+  try {
+    ({ size } = await fs.promises.stat(file));
+  } catch {
+    return new Response('Not found', { status: 404 });
+  }
+  const type = MEDIA_TYPES[path.extname(file)];
+  const m = /^bytes=(\d*)-(\d*)$/.exec(range || '');
+  if (!m || (!m[1] && !m[2])) {
+    return new Response(Readable.toWeb(fs.createReadStream(file)), {
+      headers: { 'Content-Type': type, 'Content-Length': String(size), 'Accept-Ranges': 'bytes' },
+    });
+  }
+  let start = m[1] ? Number(m[1]) : Math.max(0, size - Number(m[2]));
+  let end = m[1] && m[2] ? Math.min(Number(m[2]), size - 1) : size - 1;
+  if (start >= size || start > end) {
+    return new Response(null, { status: 416, headers: { 'Content-Range': `bytes */${size}` } });
+  }
+  return new Response(Readable.toWeb(fs.createReadStream(file, { start, end })), {
+    status: 206,
+    headers: {
+      'Content-Type': type,
+      'Content-Length': String(end - start + 1),
+      'Content-Range': `bytes ${start}-${end}/${size}`,
+      'Accept-Ranges': 'bytes',
+    },
+  });
+}
+
 async function serveInternal(request) {
   const { host, pathname } = new URL(request.url);
   const rel = pathname === '/' ? `${host}.html` : pathname.slice(1);
   const file = path.normalize(path.join(PAGES_DIR, rel));
   if (!file.startsWith(PAGES_DIR + path.sep)) return new Response('Not found', { status: 404 });
+  if (MEDIA_TYPES[path.extname(file)]) return serveMedia(file, request.headers.get('range'));
   try {
     return await net.fetch(pathToFileURL(file).toString());
   } catch {
@@ -97,10 +132,14 @@ function errorPage(code, desc, url, isPrivate) {
     : code <= -200 && code > -300
       ? `${host} has a problem with its security certificate, so the connection was stopped to protect you.`
       : `Something went wrong while loading ${host}.`;
-  const css = fs.readFileSync(path.join(PAGES_DIR, 'pages.css'), 'utf8');
+  // Inline the stylesheets: the error document can't load files from our scheme.
+  const css = ['theme.css', 'pages.css']
+    .map((f) => fs.readFileSync(path.join(PAGES_DIR, f), 'utf8').replace(/@import[^;]+;/g, ''))
+    .join('\n');
   return `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(host)}</title>
-<style>${css}:root{--accent:${escapeHtml(brand.accent)}}</style></head>
+<style>${css}</style></head>
 <body class="${isPrivate ? 'private' : ''}"><div class="error">
+<p class="eyebrow">${escapeHtml(brand.name)}</p>
 <h1>This page can’t be reached</h1><p class="muted">${escapeHtml(message)}</p>
 <p><code>${escapeHtml(desc)}</code></p><p class="muted">Press Reload to try again.</p>
 </div></body></html>`;
@@ -332,7 +371,7 @@ class Win {
       title: isPrivate ? `${brand.name} (Private)` : brand.name,
       icon: ICON,
       autoHideMenuBar: true,
-      backgroundColor: nativeTheme.shouldUseDarkColors ? '#1c1b22' : '#f3f2f7',
+      backgroundColor: isPrivate ? '#1b1d24' : nativeTheme.shouldUseDarkColors ? '#2a2c33' : '#dddad5',
       webPreferences: {
         session: this.session,
         preload: path.join(__dirname, 'preload-ui.js'),
@@ -432,7 +471,7 @@ class Win {
     const tab = this.active;
     const url = tab ? tab.url : '';
     return {
-      brand: { name: brand.name, accent: brand.accent },
+      brand: { name: brand.name },
       private: this.isPrivate,
       adblock: store.getSettings().adblock,
       activeId: this.activeId,
@@ -691,7 +730,6 @@ function onInternal(channel, handler) {
 
 onInternal('internal:info', (tab) => ({
   name: brand.name,
-  accent: brand.accent,
   private: tab.win.isPrivate,
   searchEngine: store.getSettings().searchEngine,
   blockedTotal: store.getSettings().blockedTotal || 0,

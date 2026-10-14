@@ -82,7 +82,8 @@ function renderToolbar() {
 browser.onState((s) => {
   state = s;
   document.body.classList.toggle('private', s.private);
-  document.documentElement.style.setProperty('--accent', s.brand.accent);
+  // "BuzzCloud Index" -> serif wordmark "BuzzCloud", like the site header
+  $('wordmark').textContent = s.brand.name.split(' ')[0];
   renderTabs();
   renderToolbar();
 });

@@ -1,0 +1,60 @@
+/* BuzzCloud brand tokens, shared by the browser toolbar (src/ui) and the
+   internal pages. Edit colors here. Palette sampled from buzzcloud.win. */
+@import url(fonts/fonts.css);
+
+:root {
+  --font-display: "Cormorant Garamond", "Cormorant", Georgia, serif;
+  --font-ui: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --tracking: 0.14em;          /* spaced-out uppercase labels */
+
+  /* Cloud (light) */
+  --frame: #dddad5;            /* tab strip */
+  --surface: #efede9;          /* toolbar, active tab, page background */
+  --card: #f8f7f5;
+  --field: #f8f7f5;
+  --line: #d1cdc6;
+  --text: #24262d;
+  --muted: #6c6f79;
+  --hover: rgba(36, 38, 45, 0.07);
+  --accent: #546176;           /* storm slate */
+  --accent-soft: rgba(84, 97, 118, 0.16);
+  --pill: #24262d;             /* solid pill button */
+  --pill-text: #f7f7f7;
+  --warn: #b0703a;
+}
+
+@media (prefers-color-scheme: dark) {
+  /* Storm (dark) */
+  :root {
+    --frame: #2a2c33;
+    --surface: #353841;
+    --card: #3c3f49;
+    --field: rgba(255, 255, 255, 0.07);
+    --line: rgba(255, 255, 255, 0.13);
+    --text: #eeece8;
+    --muted: #a3a6af;
+    --hover: rgba(255, 255, 255, 0.08);
+    --accent: #c4d1e4;         /* pale sky */
+    --accent-soft: rgba(196, 209, 228, 0.18);
+    --pill: #f7f7f7;
+    --pill-text: #24262d;
+    --warn: #e0a46c;
+  }
+}
+
+/* Night (private windows) */
+.private {
+  --frame: #1b1d24;
+  --surface: #252831;
+  --card: #2c2f39;
+  --field: rgba(255, 255, 255, 0.06);
+  --line: rgba(255, 255, 255, 0.11);
+  --text: #e9e8ee;
+  --muted: #9599a6;
+  --hover: rgba(255, 255, 255, 0.07);
+  --accent: #a9bcd8;
+  --accent-soft: rgba(169, 188, 216, 0.18);
+  --pill: #f7f7f7;
+  --pill-text: #1b1d24;
+  --warn: #e0a46c;
+}

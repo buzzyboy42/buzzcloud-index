@@ -25,7 +25,6 @@ function hostOf(url) {
 
 async function applyTheme() {
   const info = await window.internal.info();
-  document.documentElement.style.setProperty('--accent', info.accent);
   document.body.classList.toggle('private', info.private);
   return info;
 }

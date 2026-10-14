@@ -1,13 +1,29 @@
+// Background video: the first of these files that exists is used; with none
+// (or with reduced motion requested) the still sky.jpg stays.
+function startVideo() {
+  const video = document.getElementById('bg');
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return video.remove();
+  const sources = ['sky.mp4', 'sky.webm'];
+  const next = () => {
+    const src = sources.shift();
+    if (!src) return video.remove();
+    video.src = src;
+    video.play().catch(() => {});
+  };
+  video.addEventListener('error', next);
+  video.addEventListener('playing', () => video.classList.add('playing'), { once: true });
+  next();
+}
+
 (async () => {
+  startVideo();
   const info = await applyTheme();
-  const name = info.name;
-  const $logo = document.getElementById('logo');
-  // Accent the last word of multi-word names ("BuzzCloud Index"), else the last letter.
-  const split = name.includes(' ') ? name.lastIndexOf(' ') + 1 : name.length - 1;
-  $logo.append(name.slice(0, split), el('span', { textContent: name.slice(split) }));
-  document.getElementById('tagline').textContent = info.private
-    ? 'Private window'
-    : 'Fast. Private. Yours.';
+  // "BuzzCloud Index" -> wordmark "BuzzCloud" over a spaced-out "INDEX" line,
+  // echoing "BuzzCloud / COMPUTING SERVICE" on buzzcloud.win.
+  const words = info.name.split(' ');
+  document.getElementById('logo').textContent = words[0];
+  document.getElementById('subtitle').textContent =
+    [words.slice(1).join(' ') || 'Web Browser', info.private ? 'Private' : ''].filter(Boolean).join(' · ');
   document.getElementById('q').placeholder = `Search with ${info.searchEngine} or enter address`;
 
   document.getElementById('search').addEventListener('submit', (e) => {
@@ -19,7 +35,7 @@
   if (info.private) {
     document.querySelector('.home').append(el('p', {
       className: 'private-note',
-      textContent: 'Pages you open in this window won’t be saved to your history, and cookies and site data are deleted when you close it.',
+      textContent: 'Nothing from this window is saved to your history. Cookies and site data are deleted when you close it.',
     }));
   }
 
@@ -40,8 +56,7 @@
 
   if (info.adblock && info.blockedTotal > 0) {
     document.getElementById('stats').append(
-      el('b', { textContent: info.blockedTotal.toLocaleString() }),
-      ' ads & trackers blocked so far',
+      `${info.blockedTotal.toLocaleString()} ads & trackers blocked`,
     );
   }
 })();

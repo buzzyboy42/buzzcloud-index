@@ -1,7 +1,6 @@
 {
   "name": "BuzzCloud Index",
   "scheme": "buzzcloud",
-  "accent": "#7c5cff",
   "homepage": "buzzcloud://newtab",
   "searchEngines": {
     "DuckDuckGo": "https://duckduckgo.com/?q=%s",
