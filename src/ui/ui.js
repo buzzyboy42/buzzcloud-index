@@ -7,7 +7,70 @@ let lastActiveId = null;
 
 const closeIcon = '<svg viewBox="0 0 16 16"><path d="m4 4 8 8M12 4l-8 8"/></svg>';
 
+// --- Dragging tabs to reorder them ----------------------------------------
+let drag = null; // { id, el, startX, moved, index, target, slots }
+
+function startDrag(e, id, el) {
+  const tabs = [...tabsEl.children];
+  drag = {
+    id, el, startX: e.clientX, moved: false,
+    index: tabs.indexOf(el), target: tabs.indexOf(el),
+    slots: tabs.map((t) => { const r = t.getBoundingClientRect(); return { el: t, left: r.left, width: r.width }; }),
+  };
+  el.setPointerCapture(e.pointerId);
+}
+
+function moveDrag(e) {
+  if (!drag) return;
+  const dx = e.clientX - drag.startX;
+  if (!drag.moved && Math.abs(dx) < 5) return;
+  if (!drag.moved) {
+    drag.moved = true;
+    drag.el.classList.add('dragging');
+    tabsEl.classList.add('reordering');
+  }
+  const first = drag.slots[0];
+  const last = drag.slots[drag.slots.length - 1];
+  const me = drag.slots[drag.index];
+  const offset = Math.max(first.left - me.left, Math.min(last.left + last.width - (me.left + me.width), dx));
+  drag.el.style.transform = `translateX(${offset}px)`;
+
+  // Where would the dragged tab land? Count the other tabs whose centre it has passed.
+  const center = me.left + offset + me.width / 2;
+  let target = 0;
+  drag.slots.forEach((slot, i) => {
+    if (i !== drag.index && slot.left + slot.width / 2 < center) target++;
+  });
+  drag.target = target;
+
+  // Slide the tabs in between out of the way.
+  const gap = 2;
+  drag.slots.forEach((slot, i) => {
+    if (i === drag.index) return;
+    let shift = 0;
+    if (i > drag.index && i <= target) shift = -(me.width + gap);
+    if (i < drag.index && i >= target) shift = me.width + gap;
+    slot.el.style.transform = shift ? `translateX(${shift}px)` : '';
+  });
+}
+
+function endDrag() {
+  if (!drag) return;
+  const { id, el, moved, index, target } = drag;
+  drag = null;
+  if (!moved) return;
+  // Put the element in its new place right away so nothing jumps, then tell the browser.
+  const others = [...tabsEl.children].filter((t) => t !== el);
+  tabsEl.insertBefore(el, others[target] || null);
+  tabsEl.classList.remove('reordering');
+  for (const t of tabsEl.children) t.style.transform = '';
+  el.classList.remove('dragging');
+  if (target !== index) browser.send('tab:move', id, target);
+  if (state) renderTabs();
+}
+
 function renderTabs() {
+  if (drag?.moved) return; // finish the drag first; endDrag() re-renders
   const existing = new Map([...tabsEl.children].map((el) => [Number(el.dataset.id), el]));
   const narrow = state.tabs.length * 120 > tabsEl.parentElement.clientWidth - 60;
 
@@ -19,9 +82,14 @@ function renderTabs() {
       el.dataset.id = tab.id;
       el.innerHTML = `<span class="favicon"><img alt=""></span><span class="title"></span>
         <button class="close icon" title="Close tab (Ctrl+W)">${closeIcon}</button>`;
-      el.addEventListener('mousedown', (e) => {
-        if (e.button === 0 && !e.target.closest('.close')) browser.send('tab:activate', tab.id);
+      el.addEventListener('pointerdown', (e) => {
+        if (e.button !== 0 || e.target.closest('.close')) return;
+        browser.send('tab:activate', tab.id);
+        startDrag(e, tab.id, el);
       });
+      el.addEventListener('pointermove', moveDrag);
+      el.addEventListener('pointerup', endDrag);
+      el.addEventListener('pointercancel', endDrag);
       el.addEventListener('auxclick', (e) => e.button === 1 && browser.send('tab:close', tab.id));
       el.querySelector('.close').addEventListener('click', () => browser.send('tab:close', tab.id));
     }

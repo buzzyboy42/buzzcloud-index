@@ -2,7 +2,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 const CHANNELS = new Set([
-  'ui:ready', 'tab:new', 'tab:close', 'tab:activate',
+  'ui:ready', 'tab:new', 'tab:close', 'tab:activate', 'tab:move',
   'nav:go', 'nav:back', 'nav:forward', 'nav:reload', 'nav:stop', 'nav:home', 'nav:focus-page',
   'bookmark:toggle', 'adblock:toggle', 'menu:open', 'update:install',
 ]);

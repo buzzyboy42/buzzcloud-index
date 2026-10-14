@@ -1,6 +1,6 @@
 {
   "name": "buzzcloud-index",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "BuzzCloud Index: a fast, private web browser built on Chromium",
   "main": "src/main.js",
   "scripts": {
@@ -10,7 +10,8 @@
     "dist:win": "electron-builder --win",
     "dist:mac": "electron-builder --mac",
     "icon": "electron build/render-icon.js",
-    "release": "electron-builder --publish always"
+    "release": "electron-builder --publish always",
+    "video": "electron launch-video/render.js"
   },
   "author": {
     "name": "BuzzCloud"

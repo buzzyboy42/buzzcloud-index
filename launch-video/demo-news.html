@@ -1,0 +1,54 @@
+<!doctype html>
+<!-- A fictional news page with ad slots, used in the launch video's
+     ad-blocking scene. The video collapses the ad slots one by one. -->
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="../src/pages/fonts/fonts.css">
+<style>
+  body { margin: 0; background: #fbfaf7; color: #1d1d1d; font: 300 17px/1.7 Inter, sans-serif; }
+  header { display: flex; align-items: baseline; justify-content: space-between; padding: 22px 56px; border-bottom: 1px solid #e6e3dc; }
+  .mast { font: 500 34px/1 "Cormorant Garamond", serif; letter-spacing: .01em; }
+  nav { display: flex; gap: 26px; font-size: 12px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: #777; }
+  .wrap { display: grid; grid-template-columns: 1fr 300px; gap: 48px; padding: 30px 56px; }
+  .kicker { font-size: 12px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; color: #9a7b4f; }
+  h1 { font: 400 50px/1.05 "Cormorant Garamond", serif; margin: 10px 0 14px; letter-spacing: -.01em; }
+  .dek { font-size: 19px; color: #555; margin: 0 0 18px; }
+  .photo { height: 150px; border-radius: 4px; background: linear-gradient(135deg, #c9d4dc, #8fa3b1 55%, #6f8291); margin-bottom: 18px; }
+  p { margin: 0 0 14px; color: #333; }
+  .ad { overflow: hidden; border-radius: 4px; display: grid; place-items: center; text-align: center;
+        font: 700 22px/1.2 Arial, sans-serif; color: #fff; position: relative; margin-bottom: 18px; }
+  .ad small { position: absolute; top: 6px; left: 8px; font: 500 10px Arial; letter-spacing: .08em; opacity: .8; }
+  .a1 { height: 90px; background: repeating-linear-gradient(45deg, #ff3b30, #ff3b30 18px, #ff9500 18px, #ff9500 36px); }
+  .a2 { height: 250px; background: linear-gradient(160deg, #7b2ff7, #f107a3); }
+  .a3 { height: 250px; background: linear-gradient(160deg, #00c6ff, #0072ff); }
+  .a4 { height: 120px; background: #22c55e; }
+  aside h3 { font: 500 13px Inter; letter-spacing: .14em; text-transform: uppercase; color: #777; margin: 0 0 12px; }
+  .story { padding: 12px 0; border-top: 1px solid #e6e3dc; font: 500 19px/1.25 "Cormorant Garamond", serif; }
+</style>
+<script>
+  // demo-news.html?clean shows the page as BuzzCloud Index displays it: no ads.
+  if (location.search.includes('clean')) document.write('<style>[data-ad] { display: none !important; }</style>');
+</script></head>
+<body>
+  <header><div class="mast">The Daily Current</div>
+    <nav><span>World</span><span>Climate</span><span>Tech</span><span>Culture</span></nav></header>
+  <div class="ad a1" data-ad style="margin: 18px 56px 0"><small>ADVERTISEMENT</small>MEGA SALE — 90% OFF EVERYTHING!!!</div>
+  <div class="wrap">
+    <main>
+      <div class="kicker">Climate</div>
+      <h1>Clean energy passes a quiet milestone</h1>
+      <p class="dek">For the first time, renewables supplied most of the grid for a full season.</p>
+      <div class="photo"></div>
+      <div class="ad a4" data-ad><small>SPONSORED</small>You won't believe what happened next</div>
+      <p>Wind and solar farms produced more electricity than every other source combined between March and June, according to figures released this week.</p>
+      <p>Engineers credit cheaper batteries, which now store midday sunshine for the evening peak.</p>
+    </main>
+    <aside>
+      <div class="ad a2" data-ad><small>ADVERTISEMENT</small>Download our<br>shopping app</div>
+      <h3>Most read</h3>
+      <div class="story">The city that planted a million trees</div>
+      <div class="story">Inside the race to recycle old batteries</div>
+      <div class="ad a3" data-ad><small>ADVERTISEMENT</small>Flights from<br>$9 — today only</div>
+      <div class="story">Why the night sky is getting brighter</div>
+    </aside>
+  </div>
+</body></html>

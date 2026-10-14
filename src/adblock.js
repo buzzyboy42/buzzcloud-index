@@ -10,6 +10,12 @@ const { ElectronBlocker } = require('@ghostery/adblocker-electron');
 
 const COSMETIC_PRELOAD = require.resolve('@ghostery/adblocker-electron-preload');
 
+// Filter lists change daily (sites like YouTube keep changing how they serve
+// ads), so a cached engine older than this is rebuilt in the background.
+const MAX_AGE = 2 * 24 * 60 * 60 * 1000;
+const RECHECK_EVERY = 6 * 60 * 60 * 1000;
+const fetchViaChromium = (url, opts) => net.fetch(url, opts);
+
 class AdBlock {
   constructor(cacheDir, enabled) {
     this.cachePath = path.join(cacheDir, 'adblock-engine.bin');
@@ -33,14 +39,38 @@ class AdBlock {
 
   async load() {
     try {
-      this.blocker = await ElectronBlocker.fromPrebuiltAdsAndTracking((url, opts) => net.fetch(url, opts), {
+      this.use(await ElectronBlocker.fromPrebuiltAdsAndTracking(fetchViaChromium, {
         path: this.cachePath,
         read: fs.readFile,
         write: fs.writeFile,
-      });
-      this.blocker.on('request-blocked', (req) => this.onBlocked(req.tabId, req.url));
+      }));
     } catch (err) {
       console.error('Ad blocker failed to load filter lists:', err.message);
+    }
+    this.refreshIfStale();
+    setInterval(() => this.refreshIfStale(), RECHECK_EVERY).unref?.();
+  }
+
+  use(blocker) {
+    blocker.on('request-blocked', (req) => this.onBlocked(req.tabId, req.url));
+    this.blocker = blocker; // the session hooks read this.blocker on every request
+  }
+
+  // Download fresh lists and swap them in; the old engine keeps working meanwhile.
+  async refreshIfStale() {
+    try {
+      const { mtimeMs } = await fs.stat(this.cachePath);
+      if (Date.now() - mtimeMs < MAX_AGE) return;
+    } catch {
+      // No cache yet: load() is building one.
+      if (!this.blocker) return;
+    }
+    try {
+      const fresh = await ElectronBlocker.fromPrebuiltAdsAndTracking(fetchViaChromium);
+      await fs.writeFile(this.cachePath, fresh.serialize());
+      this.use(fresh);
+    } catch (err) {
+      console.error('Ad blocker could not refresh filter lists:', err.message);
     }
   }
 

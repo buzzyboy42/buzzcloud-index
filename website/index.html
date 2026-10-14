@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BuzzCloud Index — A calmer, private browser</title>
+<meta name="description" content="BuzzCloud Index is a fast, private web browser built on Chromium, with built-in ad and tracker blocking, private windows and automatic updates. Free for Windows, macOS, Linux and ChromeOS.">
+<meta property="og:title" content="BuzzCloud Index">
+<meta property="og:description" content="A calmer, more private way to browse the web.">
+<meta property="og:image" content="launch-poster.jpg">
+<link rel="icon" href="https://raw.githubusercontent.com/buzzyboy42/buzzcloud-index/main/build/icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1a1a; --mid: #9a9a9a; --line: #e8e8e8;
+    --ease: cubic-bezier(.16, 1, .3, 1);
+    --glass: linear-gradient(135deg, rgba(255,255,255,.4) 0%, rgba(255,255,255,0) 45%, rgba(255,255,255,0) 62%, rgba(255,255,255,.14) 100%), rgba(255,255,255,.08);
+    --glass-hover: linear-gradient(135deg, rgba(255,255,255,.45) 0%, rgba(255,255,255,0) 45%, rgba(255,255,255,0) 62%, rgba(255,255,255,.2) 100%), rgba(255,255,255,.14);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; font-size: 16px; }
+  body { background: #0a0a0a; color: #fff; font-family: 'Inter', sans-serif; font-weight: 400; line-height: 1.6; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; text-decoration: none; }
+  img, video { display: block; max-width: 100%; }
+  ::selection { background: rgba(255,255,255,.25); }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.2); border-radius: 99px; }
+
+  /* ── Fixed backgrounds: the videos never move; they only cross-fade ── */
+  .backdrop { position: fixed; inset: 0; z-index: -2; background: linear-gradient(160deg, #2b2b2b 0%, #161616 55%, #0a0a0a 100%); }
+  .backdrop video {
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 30%;
+    opacity: 0; transition: opacity 1.2s ease;
+  }
+  .backdrop video.active { opacity: 1; }
+  .backdrop .deep { filter: brightness(.45) saturate(.65); }
+  .backdrop .soft { filter: brightness(.62) saturate(.9); }
+  .shade { position: fixed; inset: 0; z-index: -1; pointer-events: none;
+           background: linear-gradient(160deg, rgba(0,0,0,.15) 0%, rgba(0,0,0,.32) 55%, rgba(0,0,0,.62) 100%); }
+
+  /* ── Nav ── */
+  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 300; height: 64px; padding: 0 40px;
+        display: flex; align-items: center; justify-content: space-between;
+        border-bottom: 1px solid transparent; transition: background .45s var(--ease), border-color .45s; }
+  nav.scrolled { background: rgba(12,12,12,.42); backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4); border-color: rgba(255,255,255,.08); }
+  .nav-logo { font-family: 'Cormorant Garamond', serif; font-weight: 500; font-size: 20px; letter-spacing: .04em; display: flex; align-items: baseline; gap: 10px; }
+  .nav-logo small { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .2em; text-transform: uppercase; color: rgba(255,255,255,.55); }
+  .nav-links { display: flex; gap: 32px; }
+  .nav-links a { font-size: 12.5px; letter-spacing: .06em; text-transform: uppercase; color: rgba(255,255,255,.75); transition: color .3s; }
+  .nav-links a:hover { color: #fff; }
+
+  /* ── Liquid glass buttons (from buzzcloud.win) ── */
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 999px; cursor: pointer;
+         font: 500 12.5px/1 'Inter', sans-serif; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap;
+         transition: background .35s ease, border-color .35s ease, box-shadow .35s ease, transform .35s var(--ease); }
+  .btn:active { transform: translateY(0) scale(.97); transition: transform .15s ease; }
+  .btn-primary { padding: 16px 34px; color: var(--ink); border: 1px solid rgba(255,255,255,.6);
+    background: linear-gradient(135deg, rgba(255,255,255,.9) 0%, rgba(255,255,255,.55) 45%, rgba(255,255,255,.55) 60%, rgba(255,255,255,.85) 100%), rgba(255,255,255,.7);
+    backdrop-filter: blur(22px) saturate(180%); -webkit-backdrop-filter: blur(22px) saturate(180%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 8px 28px -8px rgba(0,0,0,.3); }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: inset 0 1px 0 #fff, 0 14px 34px -8px rgba(0,0,0,.35);
+    background: linear-gradient(135deg, rgba(255,255,255,.95) 0%, rgba(255,255,255,.65) 45%, rgba(255,255,255,.65) 60%, rgba(255,255,255,.92) 100%), rgba(255,255,255,.82); }
+  .btn-outline { padding: 16px 34px; font-weight: 400; color: #fff; border: 1px solid rgba(255,255,255,.4); background: var(--glass);
+    backdrop-filter: blur(18px) saturate(180%); -webkit-backdrop-filter: blur(18px) saturate(180%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 6px 20px -6px rgba(0,0,0,.2); }
+  .btn-outline:hover { transform: translateY(-2px); border-color: rgba(255,255,255,.6); background: var(--glass-hover); }
+  .btn-small { padding: 9px 22px; font-size: 12px; letter-spacing: .06em; }
+  .btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ── Layout ── */
+  section { position: relative; padding: 140px 40px; min-height: 100vh; display: flex; align-items: center; }
+  .inner { width: 100%; max-width: 1080px; margin: 0 auto; }
+  .label { display: block; font-size: 10.5px; font-weight: 500; letter-spacing: .2em; text-transform: uppercase; color: rgba(255,255,255,.55); margin-bottom: 18px; }
+  .h2 { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: clamp(42px, 6vw, 76px); line-height: 1.04; letter-spacing: -.025em; margin-bottom: 26px; }
+  .h2 em { font-style: italic; }
+  .p { font-size: 16px; font-weight: 300; line-height: 1.85; color: rgba(255,255,255,.72); max-width: 540px; }
+  .points { list-style: none; margin-top: 34px; display: grid; gap: 14px; }
+  .points li { display: flex; gap: 16px; align-items: center; font-size: 15px; font-weight: 300; color: rgba(255,255,255,.86); }
+  .points li::before { content: ""; width: 22px; height: 1px; background: rgba(255,255,255,.55); flex: none; }
+  .right .inner > div { margin-left: auto; max-width: 560px; }
+
+  /* Hero */
+  .hero { min-height: 100svh; justify-content: center; text-align: center; padding-top: 100px; }
+  .hero-h1 { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: clamp(72px, 13vw, 168px); line-height: .92; letter-spacing: -.03em; }
+  .hero-sub { margin: 26px 0 14px; font-size: 13.5px; font-weight: 300; letter-spacing: .3em; text-transform: uppercase; color: rgba(255,255,255,.72); }
+  .hero-tag { font-size: 19px; font-weight: 300; color: rgba(255,255,255,.82); margin-bottom: 46px; }
+  .hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .hero-meta { margin-top: 22px; font-size: 12px; font-weight: 300; letter-spacing: .06em; color: rgba(255,255,255,.55); }
+  .hero-meta a { text-decoration: underline; text-underline-offset: 3px; }
+  .hero-scroll { position: absolute; bottom: 36px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 10px;
+                 color: rgba(255,255,255,.4); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; }
+  .scroll-line { width: 1px; height: 44px; background: rgba(255,255,255,.2); position: relative; overflow: hidden; }
+  .scroll-line::after { content: ''; position: absolute; top: -100%; left: 0; width: 1px; height: 100%; background: rgba(255,255,255,.7); animation: scrollDown 2s ease infinite; }
+  @keyframes scrollDown { to { top: 200%; } }
+
+  /* Film */
+  .film { text-align: center; }
+  .film .p { margin: 0 auto 44px; }
+  .player { position: relative; border-radius: 22px; overflow: hidden; border: 1px solid rgba(255,255,255,.25);
+            box-shadow: 0 50px 120px -30px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.3); background: #111; aspect-ratio: 16 / 9; }
+  .player video { width: 100%; height: 100%; object-fit: cover; }
+
+  /* Download */
+  .download { text-align: center; }
+  .download .p { margin: 0 auto 50px; }
+  .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; text-align: left; }
+  .card { position: relative; border-radius: 22px; padding: 28px 24px; border: 1px solid rgba(255,255,255,.22); background: var(--glass);
+          backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%);
+          box-shadow: inset 0 1px 0 rgba(255,255,255,.3), 0 20px 50px -20px rgba(0,0,0,.4);
+          display: flex; flex-direction: column; gap: 14px; transition: transform .35s var(--ease), border-color .35s; }
+  .card:hover { transform: translateY(-3px); border-color: rgba(255,255,255,.4); }
+  .card.mine { border-color: rgba(255,255,255,.7); background: var(--glass-hover); }
+  .card .badge { position: absolute; top: 16px; right: 16px; font-size: 9.5px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase;
+                 padding: 5px 10px; border-radius: 999px; background: rgba(255,255,255,.9); color: var(--ink); display: none; }
+  .card.mine .badge { display: block; }
+  .card h3 { font-family: 'Cormorant Garamond', serif; font-weight: 400; font-size: 30px; line-height: 1.1; }
+  .card .req { font-size: 12.5px; font-weight: 300; color: rgba(255,255,255,.6); min-height: 40px; }
+  .card .links { display: grid; gap: 8px; margin-top: auto; }
+  .card .links a { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 11px 16px; border-radius: 999px;
+                   border: 1px solid rgba(255,255,255,.28); font-size: 12px; letter-spacing: .04em; transition: background .25s, border-color .25s; }
+  .card .links a:hover { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.55); }
+  .card .links a span { color: rgba(255,255,255,.5); font-size: 11px; }
+  .card ol { margin: 0 0 0 18px; font-size: 12.5px; font-weight: 300; color: rgba(255,255,255,.7); display: grid; gap: 4px; }
+  .fineprint { margin-top: 36px; font-size: 12.5px; font-weight: 300; color: rgba(255,255,255,.55); line-height: 1.8; }
+  .fineprint a { text-decoration: underline; text-underline-offset: 3px; }
+
+  footer { position: relative; padding: 70px 40px 48px; background: rgba(10,10,10,.82); color: rgba(255,255,255,.45);
+           backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid rgba(255,255,255,.07); }
+  .footer-inner { max-width: 1080px; margin: 0 auto; display: flex; justify-content: space-between; gap: 40px; flex-wrap: wrap; }
+  .footer-logo { font-family: 'Cormorant Garamond', serif; font-weight: 500; font-size: 22px; color: #fff; letter-spacing: .04em; margin-bottom: 10px; }
+  .footer-inner p { font-size: 13px; font-weight: 300; max-width: 280px; line-height: 1.75; }
+  .footer-links { display: flex; gap: 28px; font-size: 13px; font-weight: 300; }
+  .footer-links a:hover { color: #fff; }
+
+  /* ── Motion: only text and elements move ── */
+  .reveal { opacity: 0; transform: translateY(28px); transition: opacity .9s var(--ease), transform .9s var(--ease); }
+  .reveal.in { opacity: 1; transform: none; }
+  .reveal[data-delay="1"] { transition-delay: .12s; } .reveal[data-delay="2"] { transition-delay: .24s; }
+  .reveal[data-delay="3"] { transition-delay: .36s; } .reveal[data-delay="4"] { transition-delay: .48s; }
+  .drift { will-change: transform; }
+
+  @media (max-width: 960px) {
+    .cards { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 720px) {
+    nav { padding: 0 16px; height: 60px; }
+    .nav-links { display: none; }
+    section { padding: 110px 20px; min-height: auto; }
+    .hero { min-height: 100svh; }
+    .hero-actions { flex-direction: column; align-items: center; }
+    .hero-actions .btn { width: 100%; max-width: 300px; }
+    .cards { grid-template-columns: 1fr; }
+    .right .inner > div { margin-left: 0; }
+    footer { padding: 56px 20px 40px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1; transform: none; transition: none; }
+    .scroll-line::after { animation: none; }
+    .backdrop video { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Background videos stay fixed in place; the active one changes with the section in view. -->
+<div class="backdrop" aria-hidden="true">
+  <video data-bg="clouds" class="active" src="https://drive.buzzcloud.win/s/190e0b48-cff8-4bd1-ac12-fb5571e37422" autoplay muted loop playsinline preload="auto"></video>
+  <video data-bg="deep" class="deep" src="https://drive.buzzcloud.win/s/84a97007-1148-4271-b461-3d20916753b8" muted loop playsinline preload="none"></video>
+  <video data-bg="about" class="soft" src="https://drive.buzzcloud.win/s/72750434-fe25-42ce-8204-e5401d1f1db0" muted loop playsinline preload="none"></video>
+  <video data-bg="beach" class="soft" src="https://drive.buzzcloud.win/s/5bffd341-b7d4-43f4-a5ce-b9fed551f3d5" muted loop playsinline preload="none"></video>
+  <video data-bg="edu" class="soft" src="https://drive.buzzcloud.win/s/9460dd3a-4c9f-4ce9-bbf7-248fe833534b" muted loop playsinline preload="none"></video>
+</div>
+<div class="shade" aria-hidden="true"></div>
+
+<nav id="nav">
+  <a class="nav-logo" href="#top">BuzzCloud <small>Index</small></a>
+  <div class="nav-links">
+    <a href="#film">Film</a>
+    <a href="#privacy">Privacy</a>
+    <a href="#design">Design</a>
+    <a href="#download">Download</a>
+  </div>
+  <a class="btn btn-outline btn-small" href="#download">Download</a>
+</nav>
+
+<main>
+  <section class="hero" id="top" data-bg="clouds">
+    <div class="inner drift" data-mode="scroll" data-speed="0.3">
+      <h1 class="hero-h1 reveal">BuzzCloud</h1>
+      <p class="hero-sub reveal" data-delay="1">Index</p>
+      <p class="hero-tag reveal" data-delay="2">A calmer, more private way to browse the web.</p>
+      <div class="hero-actions reveal" data-delay="3">
+        <a class="btn btn-primary" id="hero-download" href="https://github.com/buzzyboy42/buzzcloud-index/releases/latest">
+          <svg viewBox="0 0 16 16"><path d="M8 2v9m-4-4 4 4 4-4M3 14h10"/></svg>
+          <span id="hero-download-label">Download</span>
+        </a>
+        <a class="btn btn-outline" href="#film">
+          <svg viewBox="0 0 16 16"><path d="M5 3.5v9l7-4.5z"/></svg> Watch the film
+        </a>
+      </div>
+      <p class="hero-meta reveal" data-delay="4"><span id="hero-meta">Free for Windows, macOS, Linux &amp; ChromeOS</span> · <a href="#download">Other platforms</a></p>
+    </div>
+    <div class="hero-scroll"><div class="scroll-line"></div>Scroll</div>
+  </section>
+
+  <section class="film" id="film" data-bg="clouds">
+    <div class="inner">
+      <span class="label reveal">The film</span>
+      <h2 class="h2 reveal" data-delay="1">Meet <em>Index.</em></h2>
+      <p class="p reveal" data-delay="2">Fifty-five seconds on what BuzzCloud Index does, and why we made it.</p>
+      <div class="player reveal" data-delay="3">
+        <video src="launch.mp4" poster="launch-poster.jpg" controls playsinline preload="metadata"></video>
+      </div>
+    </div>
+  </section>
+
+  <section id="privacy" data-bg="deep">
+    <div class="inner drift" data-speed="0.06"><div>
+      <span class="label reveal">Privacy</span>
+      <h2 class="h2 reveal" data-delay="1">Private<br><em>by default.</em></h2>
+      <p class="p reveal" data-delay="2">Ads and trackers are stopped before they ever load, using the same filter lists trusted by millions. Pages come out cleaner, lighter and faster.</p>
+      <ul class="points">
+        <li class="reveal" data-delay="2">Built-in ad &amp; tracker blocking, on from the start</li>
+        <li class="reveal" data-delay="3">Every site is asked not to track or sell your data</li>
+        <li class="reveal" data-delay="4">Camera, microphone &amp; location only when you allow</li>
+      </ul>
+    </div></div>
+  </section>
+
+  <section class="right" id="private" data-bg="about">
+    <div class="inner drift" data-speed="0.06"><div>
+      <span class="label reveal">Private windows</span>
+      <h2 class="h2 reveal" data-delay="1">Leaves <em>no trace.</em></h2>
+      <p class="p reveal" data-delay="2">Open a private window and nothing is kept. No history, and every cookie and bit of site data is erased the moment you close it.</p>
+      <ul class="points">
+        <li class="reveal" data-delay="2">Nothing saved to your history</li>
+        <li class="reveal" data-delay="3">Cookies &amp; site data wiped on close</li>
+        <li class="reveal" data-delay="4">One shortcut away: Ctrl + Shift + N</li>
+      </ul>
+    </div></div>
+  </section>
+
+  <section id="simple" data-bg="beach">
+    <div class="inner drift" data-speed="0.06"><div>
+      <span class="label reveal">Simplicity</span>
+      <h2 class="h2 reveal" data-delay="1">Simple, <em>as it should be.</em></h2>
+      <p class="p reveal" data-delay="2">One bar to search or go anywhere. Tabs, bookmarks and history right where you expect them, and nothing you don't need.</p>
+      <ul class="points">
+        <li class="reveal" data-delay="2">Search or type an address in the same place</li>
+        <li class="reveal" data-delay="3">Bookmarks on every new tab</li>
+        <li class="reveal" data-delay="4">The keyboard shortcuts you already know</li>
+      </ul>
+    </div></div>
+  </section>
+
+  <section class="right" id="design" data-bg="edu">
+    <div class="inner drift" data-speed="0.06"><div>
+      <span class="label reveal">Design</span>
+      <h2 class="h2 reveal" data-delay="1">Designed, <em>not decorated.</em></h2>
+      <p class="p reveal" data-delay="2">Quiet typography, light, dark and private themes, and the sky on every new tab. A browser that gets out of the way of the web.</p>
+      <ul class="points">
+        <li class="reveal" data-delay="2">Follows your system's light or dark mode</li>
+        <li class="reveal" data-delay="3">Automatic updates, quietly in the background</li>
+        <li class="reveal" data-delay="4">Built on Chromium, so every site just works</li>
+      </ul>
+    </div></div>
+  </section>
+
+  <section class="download" id="download" data-bg="clouds">
+    <div class="inner">
+      <span class="label reveal">Download</span>
+      <h2 class="h2 reveal" data-delay="1">Get <em>BuzzCloud Index.</em></h2>
+      <p class="p reveal" data-delay="2"><span id="dl-version">Free</span>, for every computer you use. It updates itself after you install it.</p>
+
+      <div class="cards">
+        <div class="card reveal" data-os="windows" data-delay="1">
+          <span class="badge">Your system</span>
+          <h3>Windows</h3>
+          <p class="req">Windows 10 or 11, 64-bit</p>
+          <div class="links"><a data-asset="win" href="#">Installer (.exe) <span>↓</span></a></div>
+        </div>
+        <div class="card reveal" data-os="mac" data-delay="2">
+          <span class="badge">Your system</span>
+          <h3>macOS</h3>
+          <p class="req">macOS 12 or later</p>
+          <div class="links">
+            <a data-asset="mac-arm64" href="#">Apple silicon <span>↓</span></a>
+            <a data-asset="mac-x64" href="#">Intel <span>↓</span></a>
+          </div>
+        </div>
+        <div class="card reveal" data-os="linux" data-delay="3">
+          <span class="badge">Your system</span>
+          <h3>Linux</h3>
+          <p class="req">64-bit Intel/AMD or ARM</p>
+          <div class="links">
+            <a data-asset="deb-x64" href="#">.deb · x64 <span>↓</span></a>
+            <a data-asset="deb-arm64" href="#">.deb · ARM64 <span>↓</span></a>
+            <a data-asset="appimage-x64" href="#">AppImage · x64 <span>↓</span></a>
+            <a data-asset="appimage-arm64" href="#">AppImage · ARM64 <span>↓</span></a>
+          </div>
+        </div>
+        <div class="card reveal" data-os="chromeos" data-delay="4">
+          <span class="badge">Your system</span>
+          <h3>ChromeOS</h3>
+          <ol>
+            <li>Settings → About ChromeOS → Developers → turn on Linux</li>
+            <li>Download the file below</li>
+            <li>Open it in Files and choose Install</li>
+          </ol>
+          <div class="links">
+            <a data-asset="deb-x64" href="#">Intel / AMD <span>↓</span></a>
+            <a data-asset="deb-arm64" href="#">ARM <span>↓</span></a>
+          </div>
+        </div>
+      </div>
+
+      <p class="fineprint reveal">
+        First launch: the installers aren't code-signed yet. On Windows choose <em>More info → Run anyway</em>; on a Mac, right-click the app and choose <em>Open</em>.<br>
+        All versions and release notes are on <a href="https://github.com/buzzyboy42/buzzcloud-index/releases">GitHub</a>.
+      </p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <div>
+      <div class="footer-logo">BuzzCloud</div>
+      <p>BuzzCloud Index is a private web browser from BuzzCloud, built on Chromium.</p>
+    </div>
+    <div class="footer-links">
+      <a href="https://buzzcloud.win">BuzzCloud</a>
+      <a href="https://github.com/buzzyboy42/buzzcloud-index">Source</a>
+      <a href="https://github.com/buzzyboy42/buzzcloud-index/releases">Releases</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+(() => {
+  const REPO = 'buzzyboy42/buzzcloud-index';
+  const RELEASES = `https://github.com/${REPO}/releases/latest`;
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ── Nav background after scrolling ── */
+  const nav = document.getElementById('nav');
+  const onScroll = () => nav.classList.toggle('scrolled', scrollY > 40);
+  addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  /* ── Reveal text and elements as they enter the screen ── */
+  const revealer = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) { e.target.classList.add('in'); revealer.unobserve(e.target); }
+  }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+  document.querySelectorAll('.reveal').forEach((el) => revealer.observe(el));
+
+  /* ── Text blocks drift gently with scroll (the backgrounds stay still) ── */
+  if (!reduceMotion) {
+    const drifters = [...document.querySelectorAll('.drift')];
+    let ticking = false;
+    const drift = () => {
+      ticking = false;
+      for (const el of drifters) {
+        const speed = +el.dataset.speed || 0.06;
+        let offset;
+        if (el.dataset.mode === 'scroll') {
+          offset = scrollY * speed; // hero text sinks slowly as you scroll away
+        } else {
+          const r = el.parentElement.getBoundingClientRect(); // measure the section, not the moving block
+          offset = (r.top + r.height / 2 - innerHeight / 2) * -speed;
+        }
+        el.style.translate = `0 ${offset.toFixed(1)}px`;
+      }
+    };
+    addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(drift); } }, { passive: true });
+    drift();
+  }
+
+  /* ── Background video for the section in view ── */
+  const videos = Object.fromEntries([...document.querySelectorAll('.backdrop video')].map((v) => [v.dataset.bg, v]));
+  let current = 'clouds';
+  // A video that can't load is dropped; its section falls back to the clouds.
+  for (const [key, v] of Object.entries(videos)) {
+    v.addEventListener('error', () => {
+      delete videos[key];
+      v.remove();
+      if (current === key) { current = null; show('clouds'); }
+    });
+  }
+  const show = (wanted) => {
+    const name = videos[wanted] ? wanted : 'clouds';
+    if (name === current || !videos[name]) return;
+    const next = videos[name];
+    const prev = videos[current];
+    if (next.preload === 'none') next.preload = 'auto';
+    next.play().catch(() => {});
+    next.classList.add('active');
+    prev?.classList.remove('active');
+    setTimeout(() => { if (!prev?.classList.contains('active')) prev?.pause(); }, 1300);
+    current = name;
+  };
+  const sectionWatcher = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) show(e.target.dataset.bg);
+  }, { rootMargin: '-45% 0px -45% 0px' });
+  document.querySelectorAll('section[data-bg]').forEach((s) => sectionWatcher.observe(s));
+  if (reduceMotion) Object.values(videos).forEach((v) => { v.removeAttribute('autoplay'); v.pause(); });
+
+  /* ── Work out the visitor's system ── */
+  async function detectSystem() {
+    const ua = navigator.userAgent;
+    let os = 'other';
+    if (/CrOS/.test(ua)) os = 'chromeos';
+    else if (/iPhone|iPad|iPod|Android/.test(ua)) os = 'mobile';
+    else if (/Windows/.test(ua)) os = 'windows';
+    else if (/Macintosh|Mac OS X/.test(ua)) os = 'mac';
+    else if (/Linux|X11/.test(ua)) os = 'linux';
+
+    let arch = /aarch64|arm64|armv8/i.test(ua) ? 'arm64' : null;
+    try {
+      const hints = await navigator.userAgentData?.getHighEntropyValues?.(['architecture', 'bitness']);
+      if (hints?.architecture) arch = hints.architecture === 'arm' ? 'arm64' : 'x64';
+    } catch {}
+    return { os, arch };
+  }
+
+  /* ── Fill in download links from the latest GitHub release ── */
+  const PATTERNS = {
+    win: /Setup-.*\.exe$/,
+    'mac-arm64': /mac-arm64\.dmg$/,
+    'mac-x64': /mac-x64\.dmg$/,
+    'deb-x64': /linux-amd64\.deb$/,
+    'deb-arm64': /linux-arm64\.deb$/,
+    'appimage-x64': /linux-x86_64\.AppImage$/,
+    'appimage-arm64': /linux-arm64\.AppImage$/,
+  };
+  const NAMES = { windows: 'Windows', mac: 'Mac', linux: 'Linux', chromeos: 'ChromeOS' };
+
+  async function latestRelease() {
+    try {
+      const res = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`, { headers: { Accept: 'application/vnd.github+json' } });
+      if (!res.ok) throw new Error(res.status);
+      return await res.json();
+    } catch {
+      return null;
+    }
+  }
+
+  function bestAsset(os, arch) {
+    if (os === 'windows') return 'win';
+    if (os === 'mac') return arch === 'x64' ? 'mac-x64' : 'mac-arm64';   // most Macs sold since 2020 are Apple silicon
+    if (os === 'linux' || os === 'chromeos') return arch === 'arm64' ? 'deb-arm64' : 'deb-x64';
+    return null;
+  }
+
+  (async () => {
+    const [{ os, arch }, release] = await Promise.all([detectSystem(), latestRelease()]);
+    const urls = {};
+    for (const [key, re] of Object.entries(PATTERNS)) {
+      const asset = release?.assets?.find((a) => re.test(a.name));
+      urls[key] = asset ? asset.browser_download_url : RELEASES;
+      if (asset) {
+        document.querySelectorAll(`[data-asset="${key}"] span`).forEach((s) => {
+          s.textContent = `${Math.round(asset.size / 1048576)} MB ↓`;
+        });
+      }
+    }
+    document.querySelectorAll('[data-asset]').forEach((a) => (a.href = urls[a.dataset.asset]));
+
+    const version = release?.tag_name?.replace(/^v/, '');
+    if (version) document.getElementById('dl-version').textContent = `Version ${version}, free`;
+
+    const card = document.querySelector(`.card[data-os="${os}"]`);
+    card?.classList.add('mine');
+
+    const heroBtn = document.getElementById('hero-download');
+    const heroLabel = document.getElementById('hero-download-label');
+    const key = bestAsset(os, arch);
+    if (key) {
+      heroBtn.href = urls[key];
+      heroLabel.textContent = os === 'mac' && !arch ? 'Download for Mac' : `Download for ${NAMES[os]}`;
+      if (os === 'mac' && !arch) {
+        document.getElementById('hero-meta').innerHTML = `Apple silicon build · <a href="${urls['mac-x64']}">Intel Mac?</a>`;
+      } else if (version) {
+        document.getElementById('hero-meta').textContent = `Version ${version} · Free`;
+      }
+    } else {
+      heroBtn.href = '#download';
+      heroLabel.textContent = os === 'mobile' ? 'Get it for your computer' : 'Download';
+      if (os === 'mobile') document.getElementById('hero-meta').textContent = 'BuzzCloud Index is for computers: Windows, macOS, Linux & ChromeOS';
+    }
+  })();
+})();
+</script>
+</body>
+</html>

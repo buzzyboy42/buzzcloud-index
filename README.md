@@ -55,8 +55,9 @@ To build installers locally instead: `npm run dist:linux`, `npm run dist:win` or
 
 ## Features
 
-- **Tabs and navigation.** Tabs with back, forward, reload/stop and home. The address bar takes a URL or a search query. Middle-click closes a tab, and closed tabs can be reopened.
-- **Ad and tracker blocking.** Uses Ghostery's engine with EasyList, EasyPrivacy and related lists. It blocks network requests and hides ad elements on the page. The shield in the toolbar shows how many requests were blocked on the current page; click it to turn blocking off or on.
+- **Tabs and navigation.** Tabs with back, forward, reload/stop and home. Drag tabs to reorder them. The address bar takes a URL or a search query. Middle-click closes a tab, and closed tabs can be reopened.
+- **Type to search.** On a new tab, just start typing. Keys go straight into the search box without clicking it first. Shortcuts (Ctrl/Cmd/Alt combinations) still work as usual, and pasting anywhere on the page pastes into the box.
+- **Ad and tracker blocking.** Uses Ghostery's engine with EasyList, EasyPrivacy and uBlock Origin's lists. The lists refresh automatically every two days. It blocks network requests and hides ad elements on the page. The shield in the toolbar shows how many requests were blocked on the current page; click it to turn blocking off or on.
 - **Privacy defaults.** Every request sends `Sec-GPC: 1` and `DNT: 1`. Camera, microphone, location, notifications and screen sharing are blocked unless you allow them in a prompt, and that answer lasts until the browser restarts. The user agent is plain Chrome, so the browser can't be fingerprinted as Electron.
 - **Private windows.** Each one gets its own in-memory session. Nothing is saved to history, and cookies and storage are deleted when the window closes.
 - **Bookmarks and history.** Star a page or press Ctrl+D. Bookmarks show as tiles on the new tab page. There are searchable `buzzcloud://bookmarks` and `buzzcloud://history` pages.
@@ -84,6 +85,11 @@ To build installers locally instead: `npm run dist:linux`, `npm run dist:win` or
 - **Colors and fonts:** `src/pages/theme.css`. Both the toolbar and the internal pages use it. The fonts are bundled in `src/pages/fonts` (SIL Open Font License), so nothing loads from the internet.
 - **New tab background:** `src/pages/sky.mp4` (H.264, no audio) plays muted on a loop. `src/pages/sky.jpg` is its first frame, shown until the video starts and whenever the system asks for reduced motion. To swap the video, replace both files. The clip is "Flying through Clouds time lapse loop 2" by CGI Guy (free stock footage).
 - **App icon:** edit `build/icon.html`, then run `npm run icon` to regenerate `build/icon.png`.
+
+## Website and launch film
+
+- **Landing page:** `website/index.html` is a single page. It detects the visitor's system and chip and links the right installer from the latest GitHub release. The BuzzCloud background videos stay fixed while the text scrolls over them. Host the `website/` folder anywhere, for example GitHub Pages or buzzcloud.win.
+- **Launch film:** `website/launch.mp4` is made entirely in code. `launch-video/index.html` animates every scene, and its browser windows are the real toolbar and pages running on sample data. `npm run video` renders each frame with Electron and combines them with ffmpeg, using the cloud footage and a generated soundtrack. `STILLS=1,10,20 npm run video` renders just a few frames for checking.
 
 ## How it's put together
 

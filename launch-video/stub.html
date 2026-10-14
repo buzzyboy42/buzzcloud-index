@@ -1,0 +1,17 @@
+<!doctype html>
+<!-- Loads one of the browser's own pages (toolbar, new tab, history...) with
+     stand-in data instead of the Electron bridge, so the launch video shows
+     the real UI. Usage: stub.html?page=../src/ui/index.html&private=1 -->
+<meta charset="utf-8">
+<script>
+(async () => {
+  const target = new URL(new URLSearchParams(location.search).get('page'), location.href);
+  let html = await (await fetch(target)).text();
+  html = html.replace(/<meta http-equiv="Content-Security-Policy"[^>]*>/i, '');
+  const inject = `<base href="${target.href}"><script src="${new URL('stubs.js', location.href).href}"><\/script>`;
+  html = html.replace(/<head>/i, `<head>${inject}`);
+  document.open();
+  document.write(html);
+  document.close();
+})();
+</script>

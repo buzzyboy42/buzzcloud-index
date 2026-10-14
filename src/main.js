@@ -416,8 +416,8 @@ class Win {
     this.activeId = id;
     for (const t of this.tabs) t.view.setVisible(t === tab);
     this.layout();
-    if (isHome(tab.url)) this.focusAddress();
-    else tab.wc.focus();
+    // New tabs: the page's own search box takes the typing (see newtab.js).
+    tab.wc.focus();
     this.emit();
   }
 
@@ -431,6 +431,14 @@ class Win {
     if (this.tabs.length === 0) return this.bw.close();
     if (id === this.activeId) this.activate(this.tabs[Math.min(i, this.tabs.length - 1)].id);
     else this.emit();
+  }
+
+  moveTab(id, index) {
+    const from = this.tabs.findIndex((t) => t.id === id);
+    if (from < 0 || !Number.isInteger(index)) return;
+    const [tab] = this.tabs.splice(from, 1);
+    this.tabs.splice(Math.max(0, Math.min(index, this.tabs.length)), 0, tab);
+    this.emit();
   }
 
   reopenClosed() {
@@ -708,6 +716,7 @@ onUi('ui:ready', (win) => win.emit());
 onUi('tab:new', (win) => win.newTab());
 onUi('tab:close', (win, id) => win.closeTab(id));
 onUi('tab:activate', (win, id) => win.activate(id));
+onUi('tab:move', (win, id, index) => win.moveTab(id, index));
 onUi('nav:go', (win, input) => win.go(String(input)));
 onUi('nav:back', (win) => win.active?.wc.navigationHistory.goBack());
 onUi('nav:forward', (win) => win.active?.wc.navigationHistory.goForward());

@@ -15,8 +15,33 @@ function startVideo() {
   next();
 }
 
+// Type-to-search: there's no need to click the search box first. Any ordinary
+// key pressed while the page has focus starts typing there; shortcuts
+// (Ctrl/Cmd/Alt combinations) are left alone.
+function typeToSearch() {
+  const q = document.getElementById('q');
+  q.focus();
+  addEventListener('focus', () => q.focus());
+  document.addEventListener('keydown', (e) => {
+    if (e.defaultPrevented || e.isComposing || document.activeElement === q) return;
+    const altGr = e.getModifierState?.('AltGraph');
+    if ((e.ctrlKey || e.metaKey || e.altKey) && !altGr) return;
+    if (e.key.length !== 1 || (e.key === ' ' && !q.value)) return;
+    q.focus(); // the key press itself then lands in the search box
+  }, true);
+  document.addEventListener('paste', (e) => {
+    if (document.activeElement === q) return;
+    const text = e.clipboardData?.getData('text');
+    if (!text) return;
+    e.preventDefault();
+    q.focus();
+    q.setRangeText(text, q.selectionStart, q.selectionEnd, 'end');
+  });
+}
+
 (async () => {
   startVideo();
+  typeToSearch();
   const info = await applyTheme();
   // "BuzzCloud Index" -> wordmark "BuzzCloud" over a spaced-out "INDEX" line,
   // echoing "BuzzCloud / COMPUTING SERVICE" on buzzcloud.win.
@@ -24,7 +49,7 @@ function startVideo() {
   document.getElementById('logo').textContent = words[0];
   document.getElementById('subtitle').textContent =
     [words.slice(1).join(' ') || 'Web Browser', info.private ? 'Private' : ''].filter(Boolean).join(' · ');
-  document.getElementById('q').placeholder = `Search with ${info.searchEngine} or enter address`;
+  document.getElementById('q').placeholder = `Start typing to search ${info.searchEngine}…`;
 
   document.getElementById('search').addEventListener('submit', (e) => {
     e.preventDefault();
