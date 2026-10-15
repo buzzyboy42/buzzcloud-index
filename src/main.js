@@ -10,6 +10,7 @@ const {
   clipboard,
   dialog,
   nativeTheme,
+  nativeImage,
 } = require('electron');
 const fs = require('fs');
 const path = require('path');
@@ -119,6 +120,50 @@ async function serveInternal(request) {
   } catch {
     return new Response('Not found', { status: 404 });
   }
+}
+
+// --- Favicons ---------------------------------------------------------------
+
+const FAVICON_MAX_BYTES = 200 * 1024;
+const faviconCache = new Map(); // url -> data: URL, or null if it isn't a usable image
+
+function imageType(bytes, declared) {
+  if (/^image\//i.test(declared)) return declared.split(';')[0].trim();
+  const head = bytes.subarray(0, 16);
+  if (head[0] === 0x89 && head[1] === 0x50) return 'image/png';
+  if (head[0] === 0x00 && head[1] === 0x00 && (head[2] === 0x01 || head[2] === 0x02)) return 'image/x-icon';
+  if (head[0] === 0x47 && head[1] === 0x49) return 'image/gif';
+  if (head[0] === 0xff && head[1] === 0xd8) return 'image/jpeg';
+  if (head.toString('ascii', 0, 4) === 'RIFF') return 'image/webp';
+  if (/^\s*(<\?xml|<svg)/i.test(bytes.subarray(0, 256).toString('utf8'))) return 'image/svg+xml';
+  return null;
+}
+
+async function fetchFavicon(ses, url) {
+  if (url.startsWith('data:image/')) return url;
+  if (!/^https?:\/\//i.test(url)) return null;
+  const key = `${ses.storagePath || 'memory'}|${url}`;
+  if (faviconCache.has(key)) return faviconCache.get(key);
+  let result = null;
+  try {
+    const res = await ses.fetch(url, { cache: 'force-cache' });
+    if (res.ok) {
+      const bytes = Buffer.from(await res.arrayBuffer());
+      const type = bytes.length ? imageType(bytes, res.headers.get('content-type') || '') : null;
+      if (type && bytes.length > 16 * 1024 && /png|jpeg/.test(type)) {
+        // Big icons (some sites use 512px PNGs) are shrunk to tab size.
+        const img = nativeImage.createFromBuffer(bytes);
+        if (!img.isEmpty()) result = img.resize({ width: 64, quality: 'best' }).toDataURL();
+      } else if (type && bytes.length <= FAVICON_MAX_BYTES) {
+        result = `data:${type};base64,${bytes.toString('base64')}`;
+      }
+    }
+  } catch {
+    return null; // network trouble: don't remember it, try again next time
+  }
+  if (faviconCache.size > 500) faviconCache.delete(faviconCache.keys().next().value);
+  faviconCache.set(key, result);
+  return result;
 }
 
 const escapeHtml = (s) =>
@@ -276,11 +321,7 @@ class Tab {
       if (!win.isPrivate && isWeb(this.url)) store.updateTitle(this.url, title);
       update();
     });
-    wc.on('page-favicon-updated', (_e, favicons) => {
-      this.favicon = favicons[0] || null;
-      this.favicons.set(this.url, this.favicon);
-      update();
-    });
+    wc.on('page-favicon-updated', (_e, favicons) => this.loadFavicon(favicons));
     wc.on('did-fail-load', (_e, code, desc, url, isMainFrame) => {
       // -3 is ERR_ABORTED (e.g. user pressed stop or a download started)
       if (!isMainFrame || code === -3) return;
@@ -307,6 +348,28 @@ class Tab {
     wc.on('enter-html-full-screen', () => win.setFullScreen(true));
     wc.on('leave-html-full-screen', () => win.setFullScreen(false));
     wc.on('context-menu', (_e, params) => this.contextMenu(params));
+  }
+
+  // Favicons are downloaded here, through the tab's own session, and passed to
+  // the tab strip as data: URLs. Loading them as <img> in the toolbar page
+  // fails for sites that send Cross-Origin-Resource-Policy headers, and would
+  // leak private-window favicon requests into the normal session.
+  async loadFavicon(candidates) {
+    const pageUrl = this.url;
+    const list = [...candidates];
+    try {
+      list.push(new URL('/favicon.ico', pageUrl).href);
+    } catch {}
+    for (const url of new Set(list)) {
+      const data = await fetchFavicon(this.wc.session, url);
+      if (this.wc.isDestroyed() || this.url !== pageUrl) return; // navigated away meanwhile
+      if (data) {
+        this.favicon = data;
+        this.favicons.set(pageUrl, data);
+        this.win.emit();
+        return;
+      }
+    }
   }
 
   record(url) {
