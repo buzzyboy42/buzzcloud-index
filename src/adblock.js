@@ -7,8 +7,10 @@ const fs = require('fs/promises');
 const path = require('path');
 const { ipcMain, net } = require('electron');
 const { ElectronBlocker } = require('@ghostery/adblocker-electron');
+const { parse } = require('tldts-experimental');
 
 const COSMETIC_PRELOAD = require.resolve('@ghostery/adblocker-electron-preload');
+const SCRIPTLET_PRELOAD = path.join(__dirname, 'preload-scriptlets.js');
 
 // Filter lists change daily (sites like YouTube keep changing how they serve
 // ads), so a cached engine older than this is rebuilt in the background.
@@ -23,9 +25,12 @@ class AdBlock {
     this.enabled = enabled;
     this.onBlocked = () => {};
 
-    ipcMain.handle('@ghostery/adblocker/inject-cosmetic-filters', (event, url, msg) =>
-      this.active ? this.blocker.onInjectCosmeticFilters(event, url, msg) : undefined,
-    );
+    // Element hiding (CSS) still comes through the library's preload...
+    ipcMain.handle('@ghostery/adblocker/inject-cosmetic-filters', (event, url, msg) => this.injectStyles(event, url, msg));
+    // ...but scriptlets come from our own preload, before the page's scripts run.
+    ipcMain.on('adblock:scriptlets', (event, url) => {
+      event.returnValue = this.scriptletsFor(url);
+    });
     ipcMain.handle('@ghostery/adblocker/is-mutation-observer-enabled', (event) =>
       this.active ? this.blocker.onIsMutationObserverEnabled(event) : false,
     );
@@ -74,8 +79,40 @@ class AdBlock {
     }
   }
 
+  // Scriptlets (uBlock Origin-style "+js(...)" rules) for a page, as one script.
+  scriptletsFor(url) {
+    if (!this.active) return '';
+    try {
+      const { hostname, domain } = parse(url);
+      const { active, scripts } = this.blocker.getCosmeticsFilters({
+        url, hostname: hostname || '', domain: domain || '',
+        getBaseRules: false, getInjectionRules: true, getExtendedRules: false,
+        getRulesFromHostname: true, getRulesFromDOM: false,
+      });
+      if (active === false || !scripts.length) return '';
+      return scripts.map((s) => `try { ${s} } catch (e) {}`).join('\n');
+    } catch {
+      return '';
+    }
+  }
+
+  injectStyles(event, url, msg) {
+    if (!this.active) return;
+    const { hostname, domain } = parse(url);
+    const first = msg === undefined; // later calls carry the classes/ids found in the page
+    const { active, styles } = this.blocker.getCosmeticsFilters({
+      url, hostname: hostname || '', domain: domain || '',
+      classes: msg?.classes, hrefs: msg?.hrefs, ids: msg?.ids,
+      getBaseRules: first, getInjectionRules: false, getExtendedRules: false,
+      getRulesFromHostname: first, getRulesFromDOM: !first,
+      callerContext: { frameId: event.frameId, processId: event.processId, lifecycle: msg?.lifecycle },
+    });
+    if (active !== false && styles.length) event.sender.insertCSS(styles, { cssOrigin: 'user' });
+  }
+
   attach(session) {
     const pass = (_details, callback) => callback({});
+    session.registerPreloadScript({ type: 'frame', filePath: SCRIPTLET_PRELOAD });
     session.registerPreloadScript({ type: 'frame', filePath: COSMETIC_PRELOAD });
     session.webRequest.onBeforeRequest({ urls: ['<all_urls>'] }, (details, callback) =>
       this.active ? this.blocker.onBeforeRequest(details, callback) : pass(details, callback),

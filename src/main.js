@@ -116,7 +116,12 @@ async function serveInternal(request) {
   if (!file.startsWith(PAGES_DIR + path.sep)) return new Response('Not found', { status: 404 });
   if (MEDIA_TYPES[path.extname(file)]) return serveMedia(file, request.headers.get('range'));
   try {
-    return await net.fetch(pathToFileURL(file).toString());
+    const res = await net.fetch(pathToFileURL(file).toString());
+    // Internal pages can't be framed by websites (no clickjacking "Clear history").
+    const headers = new Headers(res.headers);
+    headers.set('Content-Security-Policy', "frame-ancestors 'none'");
+    headers.set('X-Frame-Options', 'DENY');
+    return new Response(res.body, { status: res.status, headers });
   } catch {
     return new Response('Not found', { status: 404 });
   }
@@ -278,6 +283,9 @@ class Tab {
         session: win.session,
         preload: path.join(__dirname, 'preload-internal.js'),
         additionalArguments: [`--internal-scheme=${brand.scheme}`],
+        // Run the (sandboxed) ad-blocking preloads in iframes too, e.g. embedded
+        // YouTube players. Pages still get no Node.js access.
+        nodeIntegrationInSubFrames: true,
         sandbox: true,
         contextIsolation: true,
       },
@@ -845,7 +853,8 @@ onUi('update:install', () => updater.install());
 function onInternal(channel, handler) {
   ipcMain.handle(channel, (event, ...args) => {
     const tab = tabs.get(event.sender.id);
-    if (!tab || !event.senderFrame || !isInternal(event.senderFrame.url)) throw new Error('Not allowed');
+    const frame = event.senderFrame;
+    if (!tab || !frame || frame.parent || !isInternal(frame.url)) throw new Error('Not allowed');
     return handler(tab, ...args);
   });
 }
