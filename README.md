@@ -22,7 +22,12 @@ Get the latest version from the [Releases page](https://github.com/buzzyboy42/bu
 | Linux | `.AppImage` (make it executable and run it) or `.deb`. Use `amd64`/`x86_64` files for Intel/AMD and `arm64` files for ARM |
 | ChromeOS | See below |
 
-The installers aren't code-signed yet, so on first launch Windows SmartScreen shows **More info → Run anyway**, and macOS needs **right-click → Open**.
+The installers aren't signed with a paid developer certificate yet, so the first launch needs one extra step:
+
+- **Windows:** SmartScreen shows a warning; choose **More info → Run anyway**.
+- **macOS:** open the app once and dismiss the warning, then go to **System Settings → Privacy & Security** and click **Open Anyway**. On macOS 14 and earlier, **right-click the app → Open** also works.
+  If macOS says the app **"is damaged and can't be opened"** (versions 0.4.2 and older, which weren't signed at all), run this once in Terminal and open it again:
+  `xattr -cr "/Applications/BuzzCloud Index.app"`
 
 ### ChromeOS
 
