@@ -8,5 +8,35 @@
     "Startpage": "https://www.startpage.com/do/search?q=%s",
     "Google": "https://www.google.com/search?q=%s"
   },
-  "defaultSearchEngine": "DuckDuckGo"
+  "defaultSearchEngine": "DuckDuckGo",
+  "backgrounds": [
+    {
+      "id": "clouds",
+      "name": "Clouds",
+      "src": "sky.mp4"
+    },
+    {
+      "id": "cannon-beach",
+      "name": "Cannon Beach",
+      "src": "https://drive.buzzcloud.win/s/5bffd341-b7d4-43f4-a5ce-b9fed551f3d5",
+      "filter": "brightness(.85) saturate(.9)"
+    },
+    {
+      "id": "underwater",
+      "name": "Underwater",
+      "src": "https://drive.buzzcloud.win/s/84a97007-1148-4271-b461-3d20916753b8",
+      "filter": "brightness(.6) saturate(.75)"
+    },
+    {
+      "id": "est-2025",
+      "name": "Est. 2025",
+      "src": "https://drive.buzzcloud.win/s/72750434-fe25-42ce-8204-e5401d1f1db0"
+    },
+    {
+      "id": "education",
+      "name": "Education",
+      "src": "https://drive.buzzcloud.win/s/9460dd3a-4c9f-4ce9-bbf7-248fe833534b"
+    }
+  ],
+  "defaultBackground": "clouds"
 }

@@ -1,15 +1,37 @@
-// Background video: the first of these files that exists is used; with none
-// (or with reduced motion requested) the still sky.jpg stays.
-function startVideo() {
+// Background video: the one chosen under Settings → New Tab Background, falling
+// back to the built-in clouds if it can't load. With reduced motion requested,
+// the still sky.jpg stays.
+function startVideo(background) {
   const video = document.getElementById('bg');
+  if (!video) return;
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return video.remove();
-  const sources = ['sky.mp4', 'sky.webm'];
+  const custom = background && background.src !== 'sky.mp4';
+  if (custom) {
+    // Don't flash the clouds' still frame before a different video appears.
+    document.querySelector('.home').classList.add('custom-bg');
+    if (background.filter) video.style.filter = background.filter;
+  }
+  const sources = [...new Set([background?.src, 'sky.mp4'].filter(Boolean))];
   const next = () => {
     const src = sources.shift();
     if (!src) return video.remove();
+    if (src === 'sky.mp4') {
+      video.style.filter = '';
+      document.querySelector('.home').classList.remove('custom-bg');
+    }
+    video.loop = true; // loopBetween() takes over when there are fades to skip
     video.src = src;
-    video.play().catch(() => {});
   };
+  // Before it starts, cut any fade-in/fade-out off the loop (fades.js), or use
+  // the trim points given in brand.json.
+  video.addEventListener('loadeddata', async () => {
+    const usingChosen = !(custom && video.currentSrc.endsWith('/sky.mp4')); // not the fallback
+    const trim = usingChosen && background?.trim
+      ? { start: background.trim[0], end: background.trim[1] }
+      : await BackgroundFades.findFades(video.currentSrc);
+    if (trim) BackgroundFades.loopBetween(video, trim);
+    video.play().catch(() => {});
+  });
   video.addEventListener('error', next);
   video.addEventListener('playing', () => video.classList.add('playing'), { once: true });
   next();
@@ -40,9 +62,9 @@ function typeToSearch() {
 }
 
 (async () => {
-  startVideo();
   typeToSearch();
   const info = await applyTheme();
+  startVideo(info.background);
   // "BuzzCloud Index" -> wordmark "BuzzCloud" over a spaced-out "INDEX" line,
   // echoing "BuzzCloud / COMPUTING SERVICE" on buzzcloud.win.
   const words = info.name.split(' ');

@@ -109,6 +109,7 @@ h1 {
   background: url(sky.jpg) center 30% / cover no-repeat,
     linear-gradient(160deg, #2b2b2b 0%, #161616 55%, #0a0a0a 100%);
 }
+.home.custom-bg { background: linear-gradient(160deg, #2b2b2b 0%, #161616 55%, #0a0a0a 100%); }
 .home::before {                     /* .hero-overlay */
   content: "";
   position: absolute;

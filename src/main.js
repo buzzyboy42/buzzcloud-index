@@ -19,6 +19,7 @@ const brand = require('../brand.json');
 const { createStores } = require('./store');
 const { AdBlock } = require('./adblock');
 const updater = require('./updater');
+const { Backgrounds } = require('./backgrounds');
 
 app.setName(brand.name);
 protocol.registerSchemesAsPrivileged([
@@ -32,6 +33,7 @@ const ICON = path.join(__dirname, '..', 'build', 'icon.png');
 
 let store;
 let adblock;
+let backgrounds;
 const windows = new Map(); // ui webContents id -> Win
 const tabs = new Map(); // tab webContents id -> Tab
 const configuredSessions = new WeakSet();
@@ -102,6 +104,12 @@ async function serveMedia(file, range) {
 
 async function serveInternal(request) {
   const { host, pathname } = new URL(request.url);
+  // Saved copies of downloaded new tab backgrounds live in the user-data folder.
+  const saved = host === 'newtab' && /^\/bg\/([\w-]+)\.mp4$/.exec(pathname);
+  if (saved) {
+    const file = backgrounds?.cachedFileFor(saved[1]);
+    return file ? serveMedia(file, request.headers.get('range')) : new Response('Not found', { status: 404 });
+  }
   const rel = pathname === '/' ? `${host}.html` : pathname.slice(1);
   const file = path.normalize(path.join(PAGES_DIR, rel));
   if (!file.startsWith(PAGES_DIR + path.sep)) return new Response('Not found', { status: 404 });
@@ -549,9 +557,47 @@ function zoom(delta) {
   tab.wc.setZoomLevel(delta === 0 ? 0 : tab.wc.getZoomLevel() + delta);
 }
 
+function currentBackground() {
+  return store.getSettings().background || brand.defaultBackground;
+}
+
+function setBackground(id) {
+  store.setSetting('background', id);
+  backgrounds.cache(backgrounds.find(id));
+  // Show it right away on any open new tab pages.
+  for (const tab of tabs.values()) if (isHome(tab.url)) tab.wc.reload();
+  buildAppMenu();
+}
+
+function setAppearance(mode) {
+  store.setSetting('appearance', mode);
+  nativeTheme.themeSource = mode; // 'system' | 'light' | 'dark'
+  buildAppMenu();
+}
+
 function settingsMenu() {
   const settings = store.getSettings();
+  const appearance = settings.appearance || 'system';
   return [
+    {
+      label: 'Appearance',
+      submenu: [['system', 'Match System'], ['light', 'Light'], ['dark', 'Dark']].map(([mode, label]) => ({
+        label,
+        type: 'radio',
+        checked: appearance === mode,
+        click: () => setAppearance(mode),
+      })),
+    },
+    {
+      label: 'New Tab Background',
+      submenu: brand.backgrounds.map((bg) => ({
+        label: bg.name,
+        type: 'radio',
+        checked: currentBackground() === bg.id,
+        click: () => setBackground(bg.id),
+      })),
+    },
+    { type: 'separator' },
     {
       label: 'Block Ads && Trackers',
       type: 'checkbox',
@@ -747,6 +793,7 @@ onInternal('internal:info', (tab) => ({
   searchEngine: store.getSettings().searchEngine,
   blockedTotal: store.getSettings().blockedTotal || 0,
   adblock: store.getSettings().adblock,
+  background: backgrounds.source(currentBackground()),
 }));
 onInternal('internal:bookmarks', () => store.listBookmarks());
 onInternal('internal:history', () => store.listHistory());
@@ -782,6 +829,9 @@ if (!app.requestSingleInstanceLock()) {
   app.whenReady().then(() => {
     const userData = app.getPath('userData');
     store = createStores(userData, brand);
+    nativeTheme.themeSource = store.getSettings().appearance || 'system';
+    backgrounds = new Backgrounds(brand.backgrounds, path.join(userData, 'backgrounds'));
+    backgrounds.cache(backgrounds.find(currentBackground()));
     app.userAgentFallback = cleanUserAgent(app.userAgentFallback);
 
     adblock = new AdBlock(userData, store.getSettings().adblock);

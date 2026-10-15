@@ -56,6 +56,8 @@ To build installers locally instead: `npm run dist:linux`, `npm run dist:win` or
 ## Features
 
 - **Tabs and navigation.** Tabs with back, forward, reload/stop and home. Drag tabs to reorder them. The address bar takes a URL or a search query. Middle-click closes a tab, and closed tabs can be reopened.
+- **Settings → Appearance:** Match System, Light or Dark.
+- **Settings → New Tab Background:** Clouds (built in), Cannon Beach, Underwater, Est. 2025 or Education. The others stream from BuzzCloud's drive the first time, then a saved copy is used so new tabs open instantly and offline. Any fade-in or fade-out is detected and cut from the loop.
 - **Type to search.** On a new tab, just start typing. Keys go straight into the search box without clicking it first. Shortcuts (Ctrl/Cmd/Alt combinations) still work as usual, and pasting anywhere on the page pastes into the box.
 - **Ad and tracker blocking.** Uses Ghostery's engine with EasyList, EasyPrivacy and uBlock Origin's lists. The lists refresh automatically every two days. It blocks network requests and hides ad elements on the page. The shield in the toolbar shows how many requests were blocked on the current page; click it to turn blocking off or on.
 - **Privacy defaults.** Every request sends `Sec-GPC: 1` and `DNT: 1`. Camera, microphone, location, notifications and screen sharing are blocked unless you allow them in a prompt, and that answer lasts until the browser restarts. The user agent is plain Chrome, so the browser can't be fingerprinted as Electron.
@@ -81,7 +83,7 @@ To build installers locally instead: `npm run dist:linux`, `npm run dist:win` or
 
 ## Branding
 
-- **Name, search engines and homepage:** `brand.json`. A two-word name like "BuzzCloud Index" shows as the serif wordmark "BuzzCloud" with "INDEX" underneath.
+- **Name, search engines, homepage and new tab backgrounds:** `brand.json`. Each background has an `id`, a `name` for the menu and a `src`. A `filter` (for example `brightness(.6)`) can darken a busy video, and `"trim": [start, end]` sets loop points in seconds by hand instead of detecting fades automatically. A two-word name like "BuzzCloud Index" shows as the serif wordmark "BuzzCloud" with "INDEX" underneath.
 - **Colors and fonts:** `src/pages/theme.css`. Both the toolbar and the internal pages use it. The fonts are bundled in `src/pages/fonts` (SIL Open Font License), so nothing loads from the internet.
 - **New tab background:** `src/pages/sky.mp4` (H.264, no audio) plays muted on a loop. `src/pages/sky.jpg` is its first frame, shown until the video starts and whenever the system asks for reduced motion. To swap the video, replace both files. The clip is "Flying through Clouds time lapse loop 2" by CGI Guy (free stock footage).
 - **App icon:** edit `build/icon.html`, then run `npm run icon` to regenerate `build/icon.png`.
